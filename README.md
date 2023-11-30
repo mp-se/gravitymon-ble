@@ -49,3 +49,10 @@ or
 2023-10-21 12:32:08,012 __main__ INFO:   [Characteristic] ea9a7e4b-d100-483d-8fdb-94b47730ed7a (Handle: 11): Unknown (read), Value: bytearray(b'{"name":"my_device_name","ID": "01234567","token":"my_token","interval":46,"temperature":20.2,"temp_units":"C","gravity":1.05,"angle":
 ```
 
+# Test script for reading TILT ble data
+
+`python .\tilt_scan.py`
+
+# Test script for reading GRAVITYMON ble data
+
+`python .\gravitymon_scan.py`
