@@ -1,35 +1,33 @@
-import asyncio
-import logging
+import asyncio, logging, json, requests
 
 from bleak import BleakClient, BleakScanner
 
 logger = logging.getLogger(__name__)
 
 async def main():
-    logger.info("starting scan...")
+    while True:
+        logger.info("Scanning for gravitymon devices...")
+        
+        device = await BleakScanner.find_device_by_name("gravitymon", cb=dict(use_bdaddr=False))
+        if device is None:
+            logger.error("Could not find any device with name 'gravitymon'")
+        else:
+            logger.info("Connecting to gravitymon.")
+            async with BleakClient(
+                device,
+            ) as client:
+                logger.info("Connected to gravitymon.")
+                for service in client.services:
+                    for char in service.characteristics:
+                        if "read" in char.properties and char.uuid.startswith("00002903"):
+                            try:
+                                value = await client.read_gatt_char(char.uuid)
+                                data = json.loads( value.decode() )
+                                logger.info( "Data received: %s", json.dumps(data) )
 
-    
-    device = await BleakScanner.find_device_by_name("gravitymon", cb=dict(use_bdaddr=False))
-    if device is None:
-        logger.error("could not find device with name '%s'", "gravitymon")
-        return
-
-    logger.info("connecting to device...")
-
-    async with BleakClient(
-        device,
-    ) as client:
-        logger.info("connected")
-
-        for service in client.services:
-            for char in service.characteristics:
-                if "read" in char.properties and char.uuid.startswith("00002903"):
-                    try:
-                        value = await client.read_gatt_char(char.uuid)
-                        logger.info( value.decode() )
-                    except Exception as e:
-                        logger.error( "Failed to read, Error: %s", e)
-    logger.info("disconnected")
+                            except Exception as e:
+                                logger.error( "Failed to read data, Error: %s", e)
+            logger.info("Disconnected from gravitymon")
 
 if __name__ == "__main__":
     logging.basicConfig(

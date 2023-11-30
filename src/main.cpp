@@ -24,23 +24,37 @@ int loopCounter = 0;
 void loop() {
 #if defined(USE_TILT)
   String color("red");
-  myBleSender->sendTiltData(color, 41.234, 1.2345, false);
+  myBleSender->sendTiltData(color, 41.234, loopCounter*1.1, false);
+  delay(5000);
 #endif
 
 #if defined(USE_TILT_PRO)
   String color("red");
   myBleSender->sendTiltData(color, 41.234, 1.2345, true);
+  delay(5000);
 #endif
 
 #if defined(USE_GRAVITYMON)
+  Serial.printf("BLE beacon started\n");
   String param(loopCounter);
-  String json("{\"name\":\"my_device_name\",\"ID\": \"01234567\",\"token\":\"my_token\",\"interval\":" + String(loopCounter) + ",\"temperature\":20.2,\"temp_units\":\"C\",\"gravity\":1.05,\"angle\":34.45,\"battery\":3.85,\"RSSI\":-76.2,}");
+  String json("{\"name\":\"my_device_name\",\"ID\": \"112233\",\"token\":\"my_token\",\"interval\":" + String(loopCounter) + ",\"temperature\":20.2,\"temp_units\":\"C\",\"gravity\":1.05,\"angle\":34.45,\"battery\":3.85,\"RSSI\":-76.2}");
   myBleSender->sendGravitymonData(json);
-  delay(100);
-  Serial.printf("BLE beacon has been read: %s\n", myBleSender->isGravitymonRead() ? "true" : "false");
+  
+  int counter = 0;
+
+  while(counter < 100) {
+    delay(100);
+    Serial.printf(".");
+
+    if(myBleSender->isGravitymonDataSent()) {
+      Serial.printf("\nBLE beacon has been read\n");
+      break;
+    }
+    counter ++;
+  }
+  
 #endif
 
-  delay(2000);
   loopCounter++;
 }
 

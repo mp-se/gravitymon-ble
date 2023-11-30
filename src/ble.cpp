@@ -35,24 +35,21 @@ SOFTWARE.
 
 class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
  private:
-  bool _isRead = false;
+  volatile bool _isRead = false;
 
  public:
+    void clearReadFlag() { _isRead = false; }
     bool isRead() { return _isRead; }
 
     void onRead(NimBLECharacteristic* pCharacteristic){
-        Serial.print(pCharacteristic->getUUID().toString().c_str());
-        Serial.print(": onRead(), value: ");
-        Serial.println(pCharacteristic->getValue().c_str());
-        _isRead = true;
+      Serial.print(pCharacteristic->getUUID().toString().c_str());
+      Serial.print(": onRead(), value: ");
+      Serial.println(pCharacteristic->getValue().c_str());
+      _isRead = true;
     }
 };
 
 static CharacteristicCallbacks myCharCallbacks;
-
-bool BleSender::isGravitymonRead() {
-  return myCharCallbacks.isRead();
-}
 
 BleSender::BleSender() {
   BLEDevice::init("gravitymon");
@@ -122,9 +119,9 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
   _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON);
 
   _advertising->start();
-  delay(100);
-  _advertising->stop();
-  delay(100);
+  delay(200);
+  //_advertising->stop();
+  //delay(200);
 }
 
 void BleSender::sendGravitymonData(String& payload) {
@@ -144,8 +141,13 @@ void BleSender::sendGravitymonData(String& payload) {
     BLEDevice::startAdvertising();
   }
 
+  myCharCallbacks.clearReadFlag();
   _characteristic->setValue(payload);
   Serial.println("Characteristic defined, ready for reading!");
+}
+
+bool BleSender::isGravitymonDataSent() {
+  return myCharCallbacks.isRead();
 }
 
 #endif  // ESP32 && !ESP32S2

@@ -42,8 +42,9 @@ class BleSender {
   explicit BleSender();
 
   void sendTiltData(String& color, float tempF, float gravSG, bool tiltPro);
+
   void sendGravitymonData(String& payload);
-  bool isGravitymonRead();
+  bool isGravitymonDataSent();
 };
 
 #endif  // ESP32 && !ESP32S2
