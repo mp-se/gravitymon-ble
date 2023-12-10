@@ -10,12 +10,6 @@ BleSender* myBleSender;
 void setup() {
   Serial.begin(115200);
   myBleSender = new BleSender();
-
-#if defined(USE_GRAVITYMON)
-  String json("");
-  myBleSender->sendGravitymonData(json);
-#endif
-
   Serial.println("Setup completed!");
 }
 
@@ -50,9 +44,8 @@ void loop() {
       Serial.printf("\nBLE beacon has been read\n");
       break;
     }
-    counter ++;
+    counter ++;   
   }
-  
 #endif
 
   loopCounter++;

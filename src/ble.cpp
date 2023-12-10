@@ -120,21 +120,21 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
 
   _advertising->start();
   delay(200);
-  //_advertising->stop();
-  //delay(200);
+  _advertising->stop();
+  delay(200);
 }
 
 void BleSender::sendGravitymonData(String& payload) {
   Serial.println("Starting gravitymon data transmission");
 
   if (!_server) { // Initialize server if not already done
-    _uuid = BLEUUID::fromString("0000180a-0000-0000-0000-94b47730ed7a");
+    _uuid = BLEUUID::fromString("180A");
     _server = BLEDevice::createServer();
     _service = _server->createService(_uuid);
-    _characteristic = _service->createCharacteristic(BLEUUID::fromString("00002903-0000-0000-0000-94b47730ed7a"), NIMBLE_PROPERTY::READ );
+    _characteristic = _service->createCharacteristic(BLEUUID::fromString("2900"), NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
     _characteristic->setCallbacks(&myCharCallbacks);
     _service->start();
-    _advertising->addServiceUUID(_uuid);
+    _advertising->addServiceUUID(_uuid); 
     _advertising->setScanResponse(true);
     _advertising->setMinPreferred(0x06); 
     _advertising->setMinPreferred(0x12);
