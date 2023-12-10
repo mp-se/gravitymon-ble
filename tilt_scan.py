@@ -67,7 +67,6 @@ def device_found(
             }
 
             logger.info( "Data received: %s", json.dumps(data) )
-            #logger.info( "Device adress: %s", device.address )
 
     except KeyError as e:
         pass
@@ -81,7 +80,7 @@ async def main():
     )
 
     init()
-    scanner = BleakScanner(detection_callback=device_found,scanning_mode="active")
+    scanner = BleakScanner(detection_callback=device_found,scanning_mode="passive")
 
     logger.info("Scanning for tilt devices...")
 
