@@ -1,10 +1,10 @@
-import asyncio, logging, json, requests, time, os
+import asyncio, logging, json
 from uuid import UUID
 
 from construct import Array, Byte, Const, Int8sl, Int16ub, Struct
 from construct.core import ConstError
 
-from bleak import BleakScanner
+from bleak import BleakScanner, BleakClient
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
@@ -46,28 +46,40 @@ def first(iterable, default=None):
     return item
   return default
 
-def device_found(
-    device: BLEDevice, advertisement_data: AdvertisementData
-):
-    try:
+async def parse_gravitymon(device: BLEDevice):
+    pass
+    try:      
+        async with BleakClient(device) as client:
+            for service in client.services:
+                if service.uuid.startswith("0000180a-"):
+                    for char in service.characteristics:
+                        if "read" in char.properties and char.uuid.startswith("00002900-"):
+                            try:
+                                value = await client.read_gatt_char(char.uuid)
+                                data = json.loads( value.decode() )
+                                logger.info( "Data received: %s", json.dumps(data) )
+                            except Exception as e:
+                                logger.error( "Failed to read data, Error: %s", e)          
+            await client.disconnect()           
+    except Exception as e:
+        pass
+
+def parse_tilt(advertisement_data: AdvertisementData):
+    try:      
         apple_data = advertisement_data.manufacturer_data[0x004C]
         ibeacon = ibeacon_format.parse(apple_data)
         uuid = UUID(bytes=bytes(ibeacon.uuid))
         tilt = first(x for x in tilts if x.uuid == uuid)
-
         if tilt is not None:
             tempF = ibeacon.major
             gravitySG = ibeacon.minor/1000
-
             data = {
                 "color": tilt.color,
                 "gravity": gravitySG,
                 "temperature": tempF,
                 "RSSI": advertisement_data.rssi,
             }
-
             logger.info( "Data received: %s", json.dumps(data) )
-
     except KeyError as e:
         pass
     except ConstError as e:
@@ -80,13 +92,16 @@ async def main():
     )
 
     init()
-    scanner = BleakScanner(detection_callback=device_found,scanning_mode="passive")
-
-    logger.info("Scanning for tilt devices...")
+    scanner = BleakScanner(scanning_mode="passive")
+    logger.info("Scanning for tilt/gravitymon BLE devices...")
 
     while True:
-        await scanner.start()
-        await asyncio.sleep(0.1)
-        await scanner.stop()
+        results = await scanner.discover(timeout=5,return_adv=True)     
+        for d, a  in results.values():
+            #print( d, a )
+            if d.name == "gravitymon":
+                await parse_gravitymon(d)
+            else:
+                parse_tilt(a)
 
 asyncio.run(main())
