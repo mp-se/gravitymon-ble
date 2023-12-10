@@ -119,9 +119,8 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
   _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON);
 
   _advertising->start();
-  delay(200);
+  delay(_sendTime);
   _advertising->stop();
-  delay(200);
 }
 
 void BleSender::sendGravitymonData(String& payload) {

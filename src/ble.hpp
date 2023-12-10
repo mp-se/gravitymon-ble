@@ -33,6 +33,8 @@ SOFTWARE.
 
 class BleSender {
  private:
+  const char _sendTime = 300; // ms
+
   BLEAdvertising* _advertising = NULL;
   BLEServer* _server = NULL;
   BLEService* _service = NULL;
