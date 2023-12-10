@@ -27,6 +27,7 @@ SOFTWARE.
 #if defined(ESP32) && !defined(ESP32S2)
 
 #include <Arduino.h>
+#include <ArduinoLog.h>
 #include <NimBLEBeacon.h>
 #include <NimBLEDevice.h>
 

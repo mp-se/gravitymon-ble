@@ -69,7 +69,7 @@ BleSender::BleSender() {
 }
 
 void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tiltPro) {
-  Serial.println("Starting tilt data transmission");
+  Log.info(F("Starting tilt data transmission" CR));
 
   if (!color.compareTo("red"))
     _uuid = BLEUUID::fromString("A495BB10-C5B1-4B44-B512-1370F02D74DE");
@@ -88,7 +88,7 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
   else  // if (_color.compareTo("pink"))
     _uuid = BLEUUID::fromString("A495BB80-C5B1-4B44-B512-1370F02D74DE");
 
-  Serial.printf("Using UUID %s\n", _uuid.toString().c_str());
+  Log.info(F("Using UUID %s" CR), _uuid.toString().c_str());
 
   uint16_t gravity = gravSG * 1000;  // SG * 1000 or SG * 10000 for Tilt Pro/HD
   uint16_t temperature = tempF;      // Deg F _or_ Deg F * 10 for Tilt Pro/HD
@@ -125,7 +125,7 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
 }
 
 void BleSender::sendGravitymonData(String& payload) {
-  Serial.println("Starting gravitymon data transmission");
+  Log.info(F("Starting gravitymon data transmission" CR));
 
   if (!_server) { // Initialize server if not already done
     _uuid = BLEUUID::fromString("180A");
@@ -143,7 +143,7 @@ void BleSender::sendGravitymonData(String& payload) {
 
   myCharCallbacks.clearReadFlag();
   _characteristic->setValue(payload);
-  Serial.println("Characteristic defined, ready for reading!");
+  Log.info(F("Characteristic defined, ready for reading!" CR));
 }
 
 bool BleSender::isGravitymonDataSent() {
