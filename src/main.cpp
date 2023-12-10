@@ -36,15 +36,13 @@ void loop() {
 #if defined(SERVER_TILT)
   Log.info(F("Tilt beacon started" CR));
   String color("red");
-  myBleSender->sendTiltData(color, 41.234, loopCounter*1.1, false);
-  delay(5000);
+  myBleSender->sendTiltData(color, 41.234, 1.23456, false);
 #endif
 
 #if defined(SERVER_TILT_PRO)
   Log.info(F("Tilt PRO beacon started" CR));
   String color("red");
-  myBleSender->sendTiltData(color, 41.234, 1.2345, true);
-  delay(5000);
+  myBleSender->sendTiltData(color, 41.234, 1.23456, true);
 #endif
 
 #if defined(SERVER_GRAVITYMON)
@@ -55,7 +53,7 @@ void loop() {
   
   int counter = 0;
 
-  while(counter < 100) {
+  while(counter < 30) { // 3 seconds
     delay(100);
     Serial.printf(".");
 
@@ -65,6 +63,12 @@ void loop() {
     }
     counter ++;   
   }
+
+  BLEDevice::stopAdvertising();
+#endif
+
+#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON)
+  delay(10000);
 #endif
 
 #if defined(CLIENT)
