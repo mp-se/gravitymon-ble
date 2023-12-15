@@ -42,9 +42,7 @@ class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
     bool isRead() { return _isRead; }
 
     void onRead(NimBLECharacteristic* pCharacteristic){
-      Serial.print(pCharacteristic->getUUID().toString().c_str());
-      Serial.print(": onRead(), value: ");
-      Serial.println(pCharacteristic->getValue().c_str());
+      Log.info(F("onRead callback" CR)); 
       _isRead = true;
     }
 };
@@ -97,30 +95,43 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
     gravity = gravSG * 10000;
     temperature = tempF * 10;
   }
-  
-  BLEBeacon oBeacon = BLEBeacon();
-  oBeacon.setManufacturerId(
-      0x4C00);  // fake Apple 0x004C LSB (ENDIAN_CHANGE_U16!)
-  oBeacon.setProximityUUID(_uuid);
-  oBeacon.setMajor(temperature);
-  oBeacon.setMinor(gravity);
-  std::string strServiceData = "";
-  strServiceData += static_cast<char>(26);   // Len
-  strServiceData += static_cast<char>(0xFF); // Type
-  strServiceData += oBeacon.getData();
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  BLEBeacon beacon = BLEBeacon();
+  beacon.setManufacturerId(0x4C00);
+  beacon.setProximityUUID(_uuid);
+  beacon.setMajor(temperature);
+  beacon.setMinor(gravity);
 
-  BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
-  oAdvertisementData.setFlags(0x04);  // BR_EDR_NOT_SUPPORTED 0x04
-  oAdvertisementData.addData(strServiceData);
+  NimBLEExtAdvertisement advData = NimBLEExtAdvertisement();
+  advData.setFlags(0x04);  
+  advData.setManufacturerData(beacon.getData());
+  advData.setLegacyAdvertising(true);
 
-  BLEAdvertisementData oScanResponseData = BLEAdvertisementData();
-  _advertising->setAdvertisementData(oAdvertisementData);
-  _advertising->setScanResponseData(oScanResponseData);
-  _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON);
+  if(_advertising->setInstanceData(0, advData) && _advertising->start(0)) {
+    Log.info(F("Started advertising for #0" CR));
+  } else {
+    Log.info(F("Failed to start advertising for #0" CR));
+  }
 
+  delay(_sendTime);
+  _advertising->stop(0);
+#else  
+  BLEBeacon beacon = BLEBeacon();
+  beacon.setManufacturerId(0x4C00);
+  beacon.setProximityUUID(_uuid);
+  beacon.setMajor(temperature);
+  beacon.setMinor(gravity);
+
+  BLEAdvertisementData advData = BLEAdvertisementData();
+  advData.setFlags(0x04);  
+  advData.setManufacturerData(beacon.getData());
+  _advertising->setAdvertisementData(advData);
+
+  _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON); 
   _advertising->start();
   delay(_sendTime);
   _advertising->stop();
+#endif
 }
 
 void BleSender::sendGravitymonData(String& payload) {
@@ -133,11 +144,27 @@ void BleSender::sendGravitymonData(String& payload) {
     _characteristic = _service->createCharacteristic(BLEUUID::fromString("2900"), NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
     _characteristic->setCallbacks(&myCharCallbacks);
     _service->start();
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+    #error "This option is not yet implemented, WIP"
+    /*NimBLEExtAdvertisement advData = NimBLEExtAdvertisement();
+    advData.setFlags(0x04);  
+    advData.setLegacyAdvertising(true);
+    advData.setConnectable(true);
+    advData.setServiceData(NimBLEUUID("180A"), std::string("Scan me!"));
+    advData.setCompleteServices16({NimBLEUUID("180A")});
+
+    if(_advertising->setInstanceData(0, advData) && _advertising->start(0)) {
+      Log.info(F("Started advertising for #0" CR));
+    } else {
+      Log.info(F("Failed to start advertising for #0" CR));
+    }*/
+#else
     _advertising->addServiceUUID(_uuid); 
     _advertising->setScanResponse(true);
     _advertising->setMinPreferred(0x06); 
     _advertising->setMinPreferred(0x12);
     BLEDevice::startAdvertising();
+#endif
   }
 
   myCharCallbacks.clearReadFlag();

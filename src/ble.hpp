@@ -33,9 +33,13 @@ SOFTWARE.
 
 class BleSender {
  private:
-  const char _sendTime = 300; // ms
+  const int _sendTime = 1000; // ms
 
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  NimBLEExtAdvertising* _advertising = NULL;
+#else
   BLEAdvertising* _advertising = NULL;
+#endif  
   BLEServer* _server = NULL;
   BLEService* _service = NULL;
   BLECharacteristic* _characteristic = NULL;
