@@ -64,7 +64,7 @@ async def parse_gravitymon(device: BLEDevice):
     except Exception as e:
         pass
 
-def parse_tilt(advertisement_data: AdvertisementData):
+def parse_tilt(device: BLEDevice, advertisement_data: AdvertisementData):
     try:      
         apple_data = advertisement_data.manufacturer_data[0x004C]
         ibeacon = ibeacon_format.parse(apple_data)
@@ -79,11 +79,45 @@ def parse_tilt(advertisement_data: AdvertisementData):
                 "temperature": tempF,
                 "RSSI": advertisement_data.rssi,
             }
-            logger.info( "Data received: %s", json.dumps(data) )
+            logger.info( "Data received: %s %s", json.dumps(data), device.address )
     except KeyError as e:
         pass
     except ConstError as e:
         pass
+
+def parse_tilt2(device: BLEDevice, advertisement_data: AdvertisementData):
+    print(advertisement_data)
+    
+    #if device.address == "A0:76:4E:1D:BE:66":
+        #print(device)
+        #print(advertisement_data.local_name)
+        #print(advertisement_data.manufacturer_data)
+        #print(advertisement_data.platform_data)
+        #print(advertisement_data.service_data)
+        #print(advertisement_data.service_uuids)
+        #print(advertisement_data.rssi)
+        #print(device.details)
+        #print(device.name)
+
+    # try:      
+    #     apple_data = advertisement_data.manufacturer_data[0x004C]
+    #     ibeacon = ibeacon_format.parse(apple_data)
+    #     uuid = UUID(bytes=bytes(ibeacon.uuid))
+    #     tilt = first(x for x in tilts if x.uuid == uuid)
+    #     if tilt is not None:
+    #         tempF = ibeacon.major
+    #         gravitySG = ibeacon.minor/1000
+    #         data = {
+    #             "color": tilt.color,
+    #             "gravity": gravitySG,
+    #             "temperature": tempF,
+    #             "RSSI": advertisement_data.rssi,
+    #         }
+    #         logger.info( "Data received: %s", json.dumps(data) )
+    # except KeyError as e:
+    #     pass
+    # except ConstError as e:
+    #     pass
 
 async def main():
     logging.basicConfig(
@@ -92,16 +126,21 @@ async def main():
     )
 
     init()
-    scanner = BleakScanner(scanning_mode="passive")
+    #scanner = BleakScanner(scanning_mode="passive")
+    scanner = BleakScanner(scanning_mode="active")
     logger.info("Scanning for tilt/gravitymon BLE devices...")
 
     while True:
-        results = await scanner.discover(timeout=5,return_adv=True)     
+        results = await scanner.discover(timeout=6,return_adv=True)     
         for d, a  in results.values():
             #print( d, a )
-            if d.name == "gravitymon":
-                await parse_gravitymon(d)
-            else:
-                parse_tilt(a)
+            #if d.name == "gravitymon":
+            #    await parse_gravitymon(d)
+            #else:
+            #    parse_tilt(a)
+            #parse_tilt(d,a)
+            parse_tilt2(d,a)
+
+        exit(0)
 
 asyncio.run(main())
