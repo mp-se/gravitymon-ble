@@ -46,7 +46,6 @@ class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
       _isRead = true;
     }
 };
-
 static CharacteristicCallbacks myCharCallbacks;
 
 BleSender::BleSender() {
@@ -95,6 +94,7 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
     gravity = gravSG * 10000;
     temperature = tempF * 10;
   }
+
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   BLEBeacon beacon = BLEBeacon();
   beacon.setManufacturerId(0x4C00);
@@ -136,17 +136,16 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
 
 void BleSender::sendGravitymonData(String& payload) {
   Log.info(F("Starting gravitymon data transmission" CR));
-
-  if (!_server) { // Initialize server if not already done
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  if (!_server) { 
     _uuid = BLEUUID::fromString("180A");
     _server = BLEDevice::createServer();
     _service = _server->createService(_uuid);
     _characteristic = _service->createCharacteristic(BLEUUID::fromString("2900"), NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
     _characteristic->setCallbacks(&myCharCallbacks);
     _service->start();
-#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-    #error "This option is not yet implemented, WIP"
-    /*NimBLEExtAdvertisement advData = NimBLEExtAdvertisement();
+
+    NimBLEExtAdvertisement advData = NimBLEExtAdvertisement();
     advData.setFlags(0x04);  
     advData.setLegacyAdvertising(true);
     advData.setConnectable(true);
@@ -157,16 +156,24 @@ void BleSender::sendGravitymonData(String& payload) {
       Log.info(F("Started advertising for #0" CR));
     } else {
       Log.info(F("Failed to start advertising for #0" CR));
-    }*/
+    }
+  }
 #else
+  if (!_server) {
+    _uuid = BLEUUID::fromString("180A");
+    _server = BLEDevice::createServer();
+    _service = _server->createService(_uuid);
+    _characteristic = _service->createCharacteristic(BLEUUID::fromString("2900"), NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
+    _characteristic->setCallbacks(&myCharCallbacks);
+    _service->start();
     _advertising->addServiceUUID(_uuid); 
     _advertising->setScanResponse(true);
     _advertising->setMinPreferred(0x06); 
     _advertising->setMinPreferred(0x12);
     BLEDevice::startAdvertising();
-#endif
   }
 
+#endif
   myCharCallbacks.clearReadFlag();
   _characteristic->setValue(payload);
   Log.info(F("Characteristic defined, ready for reading!" CR));
