@@ -4,21 +4,51 @@ With this alternative option one can send up to 512 bytes of data which is would
 
 The gravitymon BLE sender will support 3 modes:
 
-* Tilt 
-* Tilt PRO
-* Gravitymon 
+* Tilt (iBeacon broadcast with Gravity + Temperature)
+* Tilt PRO (iBeacon broadcast with Gravity + Temperature, higher accuracy)
+* Gravitymon (Service Characteristics with up to 250 bytes of data), requires a client to connect to the device to read data
 
-# How it will be implemented
+I'm also looking into BLE 5 Extended Advertising which will allow for up to 252 bytes in the BLE advertisement.
 
-So far this is work in progress and the intended way it would work is as follows.
+## How the GRAVITYMON mode is implemented
 
-1) Gravitymon will send out the BLE advertisement for up to x seconds (timeout will be configurable)
+This option is under battery testing to see what benefits this will bring.
+
+1) Gravitymon will send out the BLE advertisement for up to 5 seconds (can be detected with both passive and active scanning)
 2) A client will connect to the device and read the characteristic which will be a json string (format will be configurable), we are limited to 512 bytes of data.
-3) Once the reading has been done or the timeout expires the gravitymon deviec will go into sleep mode.
+3) Once the reading has been done or the timeout expires the gravitymon device will go into sleep mode.
 
 Its expected to double the battery life for the device compared to sending the same data over wifi. More tests on coverage and distance is needed before this is implemented. 
 
-# Testing TILT option
+## How the GRAVITYMON extended advertisement mode is implemented
+
+This is still work in progress and there are some challenges to overcome.
+
+* Unclear how the support is implemented in various devices
+* Unclear if this is supported by the IDF/Arduino framework
+
+Simply this does not work at the moment so more trouble shooting is required.
+
+# Targets in this project
+
+This project contains the following targets
+
+* tilt-c3 : Standard TILT beacon for esp32 c3 board
+* server-c3: Gravitymon adviserment for esp32 c3 board
+* server-s3: Gravitymon adviserment for esp32 s3 board
+* client-s3: Client that can connect and read both TILT beacon and Gravitymon advertisement 
+
+The following defines are used:
+
+**CONFIG_BT_NIMBLE_EXT_ADV=1**  Enabling this will configure the NimBLE library to support extended advertisement
+
+**Note! The TILT beacon scanner code is based on Thorrak's TILTBRIDGE project.** 
+
+**Note! The TILT beacon is based on the tilt-sim by Spouliot**
+
+# Reading the data
+
+## Testing TILT option
 
 On a linux machine aioblescan can be used to detect tilt devices. Just run:
 
@@ -30,7 +60,7 @@ Tilt {"uuid": "a495bb10c5b14b44b5121370f02d74de", "major": 41, "minor": 1234, "t
 
 If you first test with the tilt option you can find the MAC adress of the BLE chip which is useful to find the right device when testing with the gravitymon option.
 
-# Testing Gravitymon option
+## Testing Gravitymon option
 
 `python .\bleak_scan.py --address c8:c9:a3:cb:38:1a`
 
@@ -49,10 +79,6 @@ or
 2023-10-21 12:32:08,012 __main__ INFO:   [Characteristic] ea9a7e4b-d100-483d-8fdb-94b47730ed7a (Handle: 11): Unknown (read), Value: bytearray(b'{"name":"my_device_name","ID": "01234567","token":"my_token","interval":46,"temperature":20.2,"temp_units":"C","gravity":1.05,"angle":
 ```
 
-# Test script for reading TILT ble data
+## Python test script for reading TILT or GRAVITYMON ble data
 
-`python .\tilt_scan.py`
-
-# Test script for reading GRAVITYMON ble data
-
-`python .\gravitymon_scan.py`
+`python .\scan.py`
