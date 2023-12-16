@@ -40,6 +40,9 @@ class ServerCallbacks: public NimBLEServerCallbacks {
 
     void onDisconnect(NimBLEServer* pServer) {
       Log.info(F("onDisconnect" CR)); 
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+      BLEDevice::startAdvertising(0);
+#endif
     };
 };
 
@@ -170,26 +173,24 @@ void BleSender::sendGravitymonData(String& payload) {
   Log.info(F("Starting gravitymon data transmission" CR));
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   if (!_server) { 
-
-    // NOTE! Does not work as when in non extended mode... need to figure this out....
-
     _server = BLEDevice::createServer();
-    //_server->setCallbacks(&myServerCallbacks);
-    _service = _server->createService(NimBLEUUID(SERV_UUID));
-    _characteristic = _service->createCharacteristic(NimBLEUUID(CHAR_UUID), NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
+    _server->setCallbacks(&myServerCallbacks);
+    _service = _server->createService(SERV_UUID);
+    _characteristic = _service->createCharacteristic(CHAR_UUID, NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
     _characteristic->setCallbacks(&myCharCallbacks);
     _service->start();
 
     _advertising->setCallbacks(&myAdvertisingCallbacks);
 
-    NimBLEExtAdvertisement advData = NimBLEExtAdvertisement(BLE_HCI_LE_PHY_1M, BLE_HCI_LE_PHY_1M);
+    NimBLEExtAdvertisement advData = NimBLEExtAdvertisement();
     advData.setFlags(0x04);  
     advData.setLegacyAdvertising(true);
     advData.setConnectable(true);
-    advData.setScannable(false);
+    advData.setScannable(true);
     advData.setName("gravitymon");
-    //advData.setServiceData(NimBLEUUID(SERV_UUID), std::string("Connect to read payload"));
-    //advData.setCompleteServices16({NimBLEUUID(SERV_UUID)});
+    advData.setCompleteServices16({_service->getUUID()});
+
+    // Extended advertising stops after disconnect so its started in the callback again
 
     if(_advertising->setInstanceData(0, advData) && _advertising->start(0)) {
       Log.info(F("Started advertising for #0" CR));
