@@ -3,7 +3,7 @@
 #include <ble.hpp>
 #include <blescanner.hpp>
 
-BleSender* myBleSender;
+BleSender* myBleSender = nullptr;
 char chip[20];
 
 void setup() {
@@ -17,10 +17,10 @@ void setup() {
   snprintf(&chip[0], sizeof(chip), "%6x", chipId);
   Log.notice(F("Main: Started setup for %s." CR), &chip[0]);
 
-
 #if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON)
   Log.info(F("Running in BROADCAST mode!" CR));
   myBleSender = new BleSender();
+  myBleSender->init();
 #endif
 
 #if defined(CLIENT)
@@ -53,7 +53,7 @@ void loop() {
   
   int counter = 0;
 
-  while(counter < 30) { // 3 seconds
+  while(counter < 100) { // 10 seconds
     delay(100);
     Serial.printf(".");
 

@@ -31,22 +31,28 @@ SOFTWARE.
 #include <NimBLEBeacon.h>
 #include <NimBLEDevice.h>
 
+#define SERV_UUID "180A" // Device Information (Payload)
+#define SERV2_UUID "1801" // Generic Access (Device Name)
+#define CHAR_UUID "2AC4" // Object Properties (Payload);
+
 class BleSender {
  private:
   const int _sendTime = 1000; // ms
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-  NimBLEExtAdvertising* _advertising = NULL;
+  NimBLEExtAdvertising* _advertising = nullptr;
 #else
-  BLEAdvertising* _advertising = NULL;
+  BLEAdvertising* _advertising = nullptr;
 #endif  
-  BLEServer* _server = NULL;
-  BLEService* _service = NULL;
-  BLECharacteristic* _characteristic = NULL;
-  BLEUUID _uuid;
+  BLEServer* _server = nullptr;
+  BLEService* _service = nullptr;
+  BLECharacteristic* _characteristic = nullptr;
+  BLEUUID _uuidTilt;
 
  public:
   explicit BleSender();
+
+  void init();
 
   void sendTiltData(String& color, float tempF, float gravSG, bool tiltPro);
 

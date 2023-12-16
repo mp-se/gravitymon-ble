@@ -47,13 +47,12 @@ def first(iterable, default=None):
   return default
 
 async def parse_gravitymon(device: BLEDevice):
-    pass
     try:      
         async with BleakClient(device) as client:
             for service in client.services:
                 if service.uuid.startswith("0000180a-"):
                     for char in service.characteristics:
-                        if "read" in char.properties and char.uuid.startswith("00002900-"):
+                        if "read" in char.properties and char.uuid.startswith("00002ac4-"):
                             try:
                                 value = await client.read_gatt_char(char.uuid)
                                 data = json.loads( value.decode() )
@@ -62,6 +61,7 @@ async def parse_gravitymon(device: BLEDevice):
                                 logger.error( "Failed to read data, Error: %s", e)          
             await client.disconnect()           
     except Exception as e:
+        logger.error( "Failed to connect, Error: %s", e)                
         pass
 
 def parse_tilt(device: BLEDevice, advertisement_data: AdvertisementData):
@@ -94,14 +94,17 @@ async def main():
     init()
     #scanner = BleakScanner(scanning_mode="passive")
     scanner = BleakScanner(scanning_mode="active")
-    logger.info("Scanning for tilt/gravitymon BLE devices...")
 
     while True:
-        results = await scanner.discover(timeout=6,return_adv=True)     
+        logger.info("Scanning for tilt/gravitymon BLE devices...")
+        results = await scanner.discover(timeout=3,return_adv=True)     
         for d, a  in results.values():
+            #print(a.service_uuids, d.name)
             if d.name == "gravitymon":
                 await parse_gravitymon(d)
             else:
                 parse_tilt(d,a)
+
+        #exit(1)
 
 asyncio.run(main())
