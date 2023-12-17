@@ -41,42 +41,23 @@ const char* TILT_COLOR_YELLOW_UUID = "a495bb70c5b14b44b5121370f02d74de";
 const char* TILT_COLOR_PINK_UUID = "a495bb80c5b14b44b5121370f02d74de";
 
 const char* SERV_UUID = "180A";
+const char* SERV2_UUID = "1801";
 const char* CHAR_UUID = "2AC4";
 
 void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
 
-  Log.notice(F("BLE : %s" CR), advertisedDevice->toString().c_str());
+  // Log.notice(F("BLE : %s" CR), advertisedDevice->toString().c_str());
 
-  /*uint8_t buf[1000];
-  NimBLEUtils u;
-  u.buildHexData(&buf[0], advertisedDevice->getPayload(), advertisedDevice->getPayloadLength());
-  Log.notice(F("BLE : %s" CR), &buf[0]);*/
+  // Check if we have a gravitymon ext beacon to process with data in advertisment.
 
-  //Log.notice(F("BLE : 1801=%s,180A='%s'" CR), advertisedDevice->getServiceData(NimBLEUUID("1801")).c_str(), advertisedDevice->getServiceData(NimBLEUUID("180A")).c_str());
-  //Log.notice(F("BLE : '%s'" CR), advertisedDevice->toString().c_str());
-
-  //if( advertisedDevice->getServiceData(NimBLEUUID(SERV_UUID)).length() > 0 ) {
-  //if( advertisedDevice->getAddress().equals(NimBLEAddress("a0:76:4e:1c:0d:fe")) ) {
-  
-    /*for(int i = 0; i < advertisedDevice->getServiceDataCount(); i++) {
-      Log.notice(F("BLE : Service data %d '%s'" CR), i, advertisedDevice->getServiceData(i).c_str());
-    }
-    
-    //Log.notice(F("BLE : name=%s,180A='%s'" CR), advertisedDevice->getName().c_str(), advertisedDevice->getServiceData(NimBLEUUID(SERV_UUID)).c_str());
-  }*/
-
-  /*Log.notice(F("BLE : Processing advertisement from '%s' %s" CR), advertisedDevice->getName().c_str(), advertisedDevice->getAddress().toString().c_str());
-  Log.notice(F("BLE : Manuf data '%s' 180A='%s'" CR), advertisedDevice->getManufacturerData().c_str(), advertisedDevice->getServiceData(NimBLEUUID("180A")).c_str());
-
-  for(int i = 0; i < advertisedDevice->getServiceDataCount(); i++) {
-    Log.notice(F("BLE : Service data %d '%s'" CR), advertisedDevice->getServiceData(i).c_str());
-  }*/
-
-  //return;
+  if( advertisedDevice->getName() == "gravitymon" && advertisedDevice->getServiceData(NimBLEUUID(SERV2_UUID)) == "gravitymon_ext") {
+      Log.notice(F("BLE : Processing gravitymon extended beacon" CR));
+      bleScanner.processGravitymonExtBeacon(advertisedDevice->getAddress(), advertisedDevice->getServiceData(NimBLEUUID(SERV_UUID)));
+  }
 
   // Check if we have a gravitymon beacon to process (legacy mode) that require us to connect with the device.
 
-  if (advertisedDevice->haveName() && advertisedDevice->getName() == "gravitymon") {
+  else if (advertisedDevice->getName() == "gravitymon") {
       Log.notice(F("BLE : Processing gravitymon beacon" CR));
       bleScanner.processGravitymonBeacon(advertisedDevice->getAddress());
       //NimBLEDevice::getScan()->stop();
@@ -103,11 +84,27 @@ void BleClientCallbacks::onConnect(NimBLEClient* client) {
   //client->updateConnParams(120,120,0,60);
 }
 
+void BleScanner::processGravitymonExtBeacon(NimBLEAddress address, const std::string &payload) {
+  Log.notice(F("BLE : Advertised gravitymon ext device: %s" CR), address.toString().c_str());
+
+  if(_gravitymonCount < NO_GRAVITYMON) {
+    _gravitymon[_gravitymonCount].address = address;
+    _gravitymon[_gravitymonCount].data = payload.c_str();
+    _gravitymon[_gravitymonCount].doConnect = false;
+    _gravitymonCount++;
+  }
+  else {
+    Log.notice(F("BLE : Max devices reached - no more devices available." CR));
+  }
+}
+
 void BleScanner::processGravitymonBeacon(NimBLEAddress address) {
   Log.notice(F("BLE : Advertised gravitymon device: %s" CR), address.toString().c_str());
 
   if(_gravitymonCount < NO_GRAVITYMON) {
     _gravitymon[_gravitymonCount].address = address;
+    _gravitymon[_gravitymonCount].data = "";
+    _gravitymon[_gravitymonCount].doConnect = true;
     _gravitymonCount++;
   }
   else {
@@ -253,9 +250,13 @@ bool BleScanner::waitForScan() {
   }
 
   for(int i = 0; i < _gravitymonCount; i ++) {
-    uint32_t start = millis();
-    connectGravitymonDevice(i);
-    Log.info(F("Connected with device %d, took %d ms" CR), i, millis()-start);
+    if(_gravitymon[i].doConnect) {
+      uint32_t start = millis();
+      connectGravitymonDevice(i);
+      Log.info(F("Connected with device %d, took %d ms" CR), i, millis()-start);
+    }
+  
+    Log.info(F("Device %d, length=%d, data=%s" CR), i, _gravitymon[i].data.length(), _gravitymon[i].data.c_str());
   }
 
   return true;

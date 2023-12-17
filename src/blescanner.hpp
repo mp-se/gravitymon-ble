@@ -66,6 +66,7 @@ struct TiltData {
 struct GravitymonData {
   NimBLEAddress address;
   String data;
+  bool doConnect;
 };
 
 const auto NO_TILT_COLORS = 8;
@@ -84,6 +85,7 @@ class BleScanner {
                               const int8_t &currentRSSI);
 
   void processGravitymonBeacon(NimBLEAddress address);
+  void processGravitymonExtBeacon(NimBLEAddress address, const std::string &payload);
 
   TiltData getTiltData(TiltColor col) { return _tilt[col]; }
 
