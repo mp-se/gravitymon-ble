@@ -6,9 +6,8 @@ The gravitymon BLE sender will support 3 modes:
 
 * Tilt (iBeacon broadcast with Gravity + Temperature)
 * Tilt PRO (iBeacon broadcast with Gravity + Temperature, higher accuracy)
-* Gravitymon (Service Characteristics with up to 250 bytes of data), requires a client to connect to the device to read data
-
-I'm also looking into BLE 5 Extended Advertising which will allow for up to 252 bytes in the BLE advertisement.
+* Gravitymon (Service Characteristics with up to 512 bytes of data), requires a client to connect to the device to read data.
+* Gravitymon Extended Advertisement (BLE5 Advertisement with up to 252 bytes of data), requires an active client to detect the data.
 
 ## How the GRAVITYMON mode is implemented
 
