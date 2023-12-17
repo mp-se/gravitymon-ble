@@ -57,6 +57,7 @@ class BleSender {
   void sendTiltData(String& color, float tempF, float gravSG, bool tiltPro);
 
   void sendGravitymonData(String& payload);
+  void sendGravitymonDataExtended(String& payload);
   bool isGravitymonDataSent();
 };
 

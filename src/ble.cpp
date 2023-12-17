@@ -42,6 +42,7 @@ class ServerCallbacks: public NimBLEServerCallbacks {
       Log.info(F("onDisconnect" CR)); 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
       BLEDevice::startAdvertising(0);
+      // BLEDevice::startAdvertising(1);
 #endif
     };
 };
@@ -190,32 +191,13 @@ void BleSender::sendGravitymonData(String& payload) {
     advData.setName("gravitymon");
     advData.setCompleteServices16({_service->getUUID()});
 
-    // Extended advertising stops after disconnect so its started in the callback again
+    // Extended advertising stops after disconnect so its started in the advertising callback again
 
     if(_advertising->setInstanceData(0, advData) && _advertising->start(0)) {
       Log.info(F("Started advertising for #0" CR));
     } else {
       Log.info(F("Failed to start advertising for #0" CR));
     }
-
-    /*NimBLEExtAdvertisement extData(BLE_HCI_LE_PHY_1M, BLE_HCI_LE_PHY_2M);
-
-    extData.setScannable(true);
-    extData.setConnectable(false);
-    extData.setServiceData(NimBLEUUID(SERV_UUID), std::string("Extended Advertising Demo.\r\n"
-                                                                "Extended advertising allows for "
-                                                                "251 bytes of data in a single advertisement,\r\n"
-                                                                "or up to 1650 bytes with chaining.\r\n"
-                                                                "This example message is 226 bytes long "
-                                                                "and is using CODED_PHY for long range."));
-    extData.setShortName("Gravitymon");
-    extData.setCompleteServices16({NimBLEUUID(SERV_UUID)});
-
-    if(_advertising->setInstanceData(0, extData) && _advertising->start(0)) {
-      Log.info(F("Started advertising for #0" CR));
-    } else {
-      Log.info(F("Failed to start advertising for #0" CR));
-    }*/
   }
 #else
   if (!_server) {
@@ -238,6 +220,43 @@ void BleSender::sendGravitymonData(String& payload) {
   myCharCallbacks.clearReadFlag();
   _characteristic->setValue(payload);
   Log.info(F("Characteristic defined, ready for reading!" CR));
+}
+
+void BleSender::sendGravitymonDataExtended(String& payload) {
+  Log.info(F("Starting gravitymon extended data transmission" CR));
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  if (!_server) { 
+    _server = BLEDevice::createServer();
+    _server->setCallbacks(&myServerCallbacks);
+    _service = _server->createService(SERV_UUID);
+    _service->start();
+
+    _advertising->setCallbacks(&myAdvertisingCallbacks);
+  }
+
+  // This is for extended advertising and sending a smaller payload. 
+  // Can be read by another ESP32 but not my iPhone or Windows computer, see Client target.
+  // Requires active scanning to be able to detect this.
+
+  NimBLEExtAdvertisement extData(BLE_HCI_LE_PHY_1M, BLE_HCI_LE_PHY_2M);
+
+  extData.setScannable(true);
+  extData.setConnectable(false);
+  extData.setServiceData(NimBLEUUID(SERV_UUID), std::string(payload.c_str()));
+  extData.setShortName("gravitymon");
+  extData.setCompleteServices16({NimBLEUUID(SERV_UUID)});
+
+  if(_advertising->setInstanceData(0, extData) && _advertising->start(0)) {
+    Log.info(F("Started advertising for #0" CR));
+  } else {
+    Log.info(F("Failed to start advertising for #0" CR));
+  }
+
+  Log.info(F("Extended advertising defined, ready for reading!" CR));
+#else
+  #warning "Extended advertising is not supported on this target"
+  Log.error(F("Extended advertising is not supported on this target!" CR));
+#endif
 }
 
 bool BleSender::isGravitymonDataSent() {

@@ -17,7 +17,7 @@ void setup() {
   snprintf(&chip[0], sizeof(chip), "%6x", chipId);
   Log.notice(F("Main: Started setup for %s." CR), &chip[0]);
 
-#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON)
+#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT)
   Log.info(F("Running in BROADCAST mode!" CR));
   myBleSender = new BleSender();
   myBleSender->init();
@@ -67,7 +67,29 @@ void loop() {
   BLEDevice::stopAdvertising();
 #endif
 
-#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON)
+#if defined(SERVER_GRAVITYMON_EXT)
+  Log.info(F("Gravitymon extended beacon started" CR));
+  String param(loopCounter);
+  String json("{\"name\":\"my_device_name\",\"ID\": \"" + String(chip) + "\",\"token\":\"my_token\",\"interval\":" + String(loopCounter) + ",\"temperature\":20.2,\"temp_units\":\"C\",\"gravity\":1.05,\"angle\":34.45,\"battery\":3.85,\"RSSI\":-76.2}");
+  myBleSender->sendGravitymonDataExtended(json);
+  
+  int counter = 0;
+
+  while(counter < 100) { // 10 seconds
+    delay(100);
+    Serial.printf(".");
+
+    if(myBleSender->isGravitymonDataSent()) {
+      Log.info(F(CR "BLE beacon has been read" CR));
+      break;
+    }
+    counter ++;   
+  }
+
+  BLEDevice::stopAdvertising();
+#endif
+
+#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT)
   delay(10000);
 #endif
 
