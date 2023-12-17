@@ -28,6 +28,11 @@ SOFTWARE.
 #define SRC_BLESCANNER_HPP_
 
 #include <ArduinoJson.h>
+#include <ArduinoLog.h>
+
+#undef LOG_LEVEL_ERROR
+#undef LOG_LEVEL_INFO
+
 #include <NimBLEAdvertisedDevice.h>
 #include <NimBLEDevice.h>
 #include <NimBLEScan.h>
@@ -69,8 +74,8 @@ struct GravitymonData {
   bool doConnect;
 };
 
-const auto NO_TILT_COLORS = 8;
-const auto NO_GRAVITYMON = 4;
+const auto NO_TILT_COLORS = 8; // Number of tilt devices that can be managed (one per color)
+const auto NO_GRAVITYMON = 4; // Number of gravitymon devices that can be handled
 
 class BleScanner {
  public:

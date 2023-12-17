@@ -28,6 +28,10 @@ SOFTWARE.
 
 #include <Arduino.h>
 #include <ArduinoLog.h>
+
+#undef LOG_LEVEL_ERROR
+#undef LOG_LEVEL_INFO
+
 #include <NimBLEBeacon.h>
 #include <NimBLEDevice.h>
 
@@ -59,6 +63,9 @@ class BleSender {
   void sendGravitymonData(String& payload);
   void sendGravitymonDataExtended(String& payload);
   bool isGravitymonDataSent();
+
+  void clearReadFlags();
+  void stopAdvertising();
 };
 
 #endif  // ESP32 && !ESP32S2

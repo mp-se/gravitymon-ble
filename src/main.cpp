@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <ArduinoLog.h>
 #include <ble.hpp>
 #include <blescanner.hpp>
 
@@ -64,15 +63,18 @@ void loop() {
     counter ++;   
   }
 
-  BLEDevice::stopAdvertising();
+  myBleSender->stopAdvertising();
 #endif
 
 #if defined(SERVER_GRAVITYMON_EXT)
   Log.info(F("Gravitymon extended beacon started" CR));
   String param(loopCounter);
-  String json("{\"name\":\"my_device_name\",\"ID\": \"" + String(chip) + "\",\"token\":\"my_token\",\"interval\":" + String(loopCounter) + ",\"temperature\":20.2,\"temp_units\":\"C\",\"gravity\":1.05,\"angle\":34.45,\"battery\":3.85,\"RSSI\":-76.2}");
+  // String json("{\"name\":\"my_device_name\",\"ID\": \"" + String(chip) + "\",\"token\":\"my_token\",\"interval\":" + String(loopCounter) + ",\"temperature\":20.2,\"temp_units\":\"C\",\"gravity\":1.05,\"angle\":34.45,\"battery\":3.85,\"RSSI\":-76.2}");
+  String json("{\"n\":\"my_device_name\",\"I\":\"" + String(chip) + "\",\"to\":\"my_token\",\"i\":" + String(loopCounter) + ",\"t\":20.2,\"u\":\"C\",\"g\":1.05,\"a\":34.45,\"b\":3.85,\"R\":-76.2}");
   myBleSender->sendGravitymonDataExtended(json);
-  
+
+  Log.info(F("Length of payload %d" CR), json.length());
+
   int counter = 0;
 
   while(counter < 100) { // 10 seconds
@@ -86,7 +88,7 @@ void loop() {
     counter ++;   
   }
 
-  BLEDevice::stopAdvertising();
+  myBleSender->stopAdvertising();
 #endif
 
 #if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT)

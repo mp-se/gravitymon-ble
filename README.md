@@ -33,18 +33,23 @@ Simply this does not work at the moment so more trouble shooting is required.
 
 This project contains the following targets
 
-* tilt-c3 : Standard TILT beacon for esp32 c3 board
-* server-c3: Gravitymon adviserment for esp32 c3 board
-* server-s3: Gravitymon adviserment for esp32 s3 board
+* server-tilt-c3 : Standard TILT beacon for esp32 c3 board
+* server-tilt-ext-c3 : Standard TILT beacon for esp32 c3 board (with EXT advertising enabled)
+* server-gravitymon-c3: Gravitymon BLE format for esp32 c3 board
+* server-gravitymon-ext-c3: Gravitymon BLE format for esp32 c3 board (with EXT advertising enabled)
+* server-adv-c3: Gravitymon BLE extended advertiserment for esp32 c3 board (with EXT advertising enabled)
 * client-s3: Client that can connect and read both TILT beacon and Gravitymon advertisement 
+
+Gravitymon BLE format requires that the client connects on the server to read the data via a characteristics attribute (can be up to 512 chars). Works with client in PASSIVE or ACTIVE mode.
+
+Gravitymon BLE ext advertising format requires that the is in ACTIVE mode. Here the payload is part of the advertisement (can be up to 252 chars)
 
 The following defines are used:
 
-**CONFIG_BT_NIMBLE_EXT_ADV=1**  Enabling this will configure the NimBLE library to support extended advertisement
+**CONFIG_BT_NIMBLE_EXT_ADV=1**  Enabling this will configure the NimBLE library to support extended advertisement. When using this mode its possible to advertise a mix of data options, TILT + Gravitymon for instance.
 
-**Note! The TILT beacon scanner code is based on Thorrak's TILTBRIDGE project.** 
-
-**Note! The TILT beacon is based on the tilt-sim by Spouliot**
+**The TILT beacon scanner code is based on Thorrak's TILTBRIDGE project.** 
+**The TILT beacon is based on the tilt-sim by Spouliot**
 
 # Reading the data
 

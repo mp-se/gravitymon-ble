@@ -67,13 +67,21 @@ static CharacteristicCallbacks myCharCallbacks;
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
 class AdvertisingCallbacks: public NimBLEExtAdvertisingCallbacks {
-    void onStopped(NimBLEExtAdvertising* pAdv, int reason, uint8_t inst_id) {
-      Log.info(F("onStopped" CR)); 
-    }
+ private:
+  volatile bool _isRead = false;
 
-    void onScanRequest(NimBLEExtAdvertising *pAdv, uint8_t inst_id, NimBLEAddress addr) {
-      Log.info(F("onScanRequest" CR)); 
-    }
+ public:
+  void clearReadFlag() { _isRead = false; }
+  bool isRead() { return _isRead; }
+
+  void onStopped(NimBLEExtAdvertising* pAdv, int reason, uint8_t inst_id) {
+    Log.info(F("onStopped" CR)); 
+  }
+
+  void onScanRequest(NimBLEExtAdvertising *pAdv, uint8_t inst_id, NimBLEAddress addr) {
+    Log.info(F("onScanRequest" CR)); 
+    _isRead = true;
+  }
 };
 
 static AdvertisingCallbacks myAdvertisingCallbacks;
@@ -217,7 +225,7 @@ void BleSender::sendGravitymonData(String& payload) {
     _advertising->start();
   }
 #endif
-  myCharCallbacks.clearReadFlag();
+  clearReadFlags();
   _characteristic->setValue(payload);
   Log.info(F("Characteristic defined, ready for reading!" CR));
 }
@@ -238,13 +246,17 @@ void BleSender::sendGravitymonDataExtended(String& payload) {
   // Can be read by another ESP32 but not my iPhone or Windows computer, see Client target.
   // Requires active scanning to be able to detect this.
 
+  _advertising->stop(0);
+
   NimBLEExtAdvertisement extData(BLE_HCI_LE_PHY_1M, BLE_HCI_LE_PHY_2M);
 
   extData.setScannable(true);
   extData.setConnectable(false);
   extData.setServiceData(NimBLEUUID(SERV_UUID), std::string(payload.c_str()));
+  extData.setServiceData(NimBLEUUID(SERV2_UUID), std::string("gravitymon_ext"));
   extData.setShortName("gravitymon");
-  extData.setCompleteServices16({NimBLEUUID(SERV_UUID)});
+  extData.setCompleteServices16({NimBLEUUID(SERV_UUID),NimBLEUUID(SERV2_UUID)});
+  extData.enableScanRequestCallback(true);
 
   if(_advertising->setInstanceData(0, extData) && _advertising->start(0)) {
     Log.info(F("Started advertising for #0" CR));
@@ -252,15 +264,35 @@ void BleSender::sendGravitymonDataExtended(String& payload) {
     Log.info(F("Failed to start advertising for #0" CR));
   }
 
+  clearReadFlags();
   Log.info(F("Extended advertising defined, ready for reading!" CR));
 #else
-  #warning "Extended advertising is not supported on this target"
-  Log.error(F("Extended advertising is not supported on this target!" CR));
+  Log.error(F("Extended advertising is not supported this method!" CR));
 #endif
 }
 
 bool BleSender::isGravitymonDataSent() {
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  return myCharCallbacks.isRead() || myAdvertisingCallbacks.isRead();
+#else
   return myCharCallbacks.isRead();
+#endif
+}
+
+void BleSender::clearReadFlags() {
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  myAdvertisingCallbacks.clearReadFlag();
+#endif
+  myCharCallbacks.clearReadFlag();
+}
+
+void BleSender::stopAdvertising() {
+  delay(500); // Allow for tranmissions to be completed, flag is set when scan is initiated
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  BLEDevice::stopAdvertising(0);
+#else
+  BLEDevice::stopAdvertising();
+#endif
 }
 
 #endif  // ESP32 && !ESP32S2

@@ -87,9 +87,37 @@ void BleClientCallbacks::onConnect(NimBLEClient* client) {
 void BleScanner::processGravitymonExtBeacon(NimBLEAddress address, const std::string &payload) {
   Log.notice(F("BLE : Advertised gravitymon ext device: %s" CR), address.toString().c_str());
 
+  DynamicJsonDocument out(1000), in(1000);
+  DeserializationError err = deserializeJson(in, payload.c_str());
+
+  if (err) {
+    Log.error(F("BLE : Failed to parse advertisement json %d" CR), err);
+    return;
+  }
+
+  // Map the tags to make this a iSpindle json document (using short names to save space in ext advertisement)
+
+  out["name"] = in["n"];
+  out["ID"] = in["I"];
+  out["token"] = in["to"];
+  out["interval"] = in["i"];
+  out["temperature"] = in["t"];
+  out["temp_units"] = in["u"];
+  out["gravity"] = in["g"];
+  out["angle"] = in["a"];
+  out["battery"] = in["b"];
+  out["RSSI"] = in["R"];
+
+  in.clear(); 
+
+  String str;
+  str.reserve(1000);
+  serializeJson(out, str);
+  out.clear();
+
   if(_gravitymonCount < NO_GRAVITYMON) {
     _gravitymon[_gravitymonCount].address = address;
-    _gravitymon[_gravitymonCount].data = payload.c_str();
+    _gravitymon[_gravitymonCount].data = str;
     _gravitymon[_gravitymonCount].doConnect = false;
     _gravitymonCount++;
   }
