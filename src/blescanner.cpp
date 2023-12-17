@@ -27,6 +27,7 @@ SOFTWARE.
 #include <ArduinoLog.h>
 
 #include <blescanner.hpp>
+#include <NimBLEUtils.h>
 
 BleScanner bleScanner;
 
@@ -39,8 +40,42 @@ const char* TILT_COLOR_BLUE_UUID = "a495bb60c5b14b44b5121370f02d74de";
 const char* TILT_COLOR_YELLOW_UUID = "a495bb70c5b14b44b5121370f02d74de";
 const char* TILT_COLOR_PINK_UUID = "a495bb80c5b14b44b5121370f02d74de";
 
+const char* SERV_UUID = "180A";
+const char* CHAR_UUID = "2AC4";
+
 void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
-  // Check if we have a gravitymon beacon to process
+
+  Log.notice(F("BLE : %s" CR), advertisedDevice->toString().c_str());
+
+  /*uint8_t buf[1000];
+  NimBLEUtils u;
+  u.buildHexData(&buf[0], advertisedDevice->getPayload(), advertisedDevice->getPayloadLength());
+  Log.notice(F("BLE : %s" CR), &buf[0]);*/
+
+  //Log.notice(F("BLE : 1801=%s,180A='%s'" CR), advertisedDevice->getServiceData(NimBLEUUID("1801")).c_str(), advertisedDevice->getServiceData(NimBLEUUID("180A")).c_str());
+  //Log.notice(F("BLE : '%s'" CR), advertisedDevice->toString().c_str());
+
+  //if( advertisedDevice->getServiceData(NimBLEUUID(SERV_UUID)).length() > 0 ) {
+  //if( advertisedDevice->getAddress().equals(NimBLEAddress("a0:76:4e:1c:0d:fe")) ) {
+  
+    /*for(int i = 0; i < advertisedDevice->getServiceDataCount(); i++) {
+      Log.notice(F("BLE : Service data %d '%s'" CR), i, advertisedDevice->getServiceData(i).c_str());
+    }
+    
+    //Log.notice(F("BLE : name=%s,180A='%s'" CR), advertisedDevice->getName().c_str(), advertisedDevice->getServiceData(NimBLEUUID(SERV_UUID)).c_str());
+  }*/
+
+  /*Log.notice(F("BLE : Processing advertisement from '%s' %s" CR), advertisedDevice->getName().c_str(), advertisedDevice->getAddress().toString().c_str());
+  Log.notice(F("BLE : Manuf data '%s' 180A='%s'" CR), advertisedDevice->getManufacturerData().c_str(), advertisedDevice->getServiceData(NimBLEUUID("180A")).c_str());
+
+  for(int i = 0; i < advertisedDevice->getServiceDataCount(); i++) {
+    Log.notice(F("BLE : Service data %d '%s'" CR), advertisedDevice->getServiceData(i).c_str());
+  }*/
+
+  //return;
+
+  // Check if we have a gravitymon beacon to process (legacy mode) that require us to connect with the device.
+
   if (advertisedDevice->haveName() && advertisedDevice->getName() == "gravitymon") {
       Log.notice(F("BLE : Processing gravitymon beacon" CR));
       bleScanner.processGravitymonBeacon(advertisedDevice->getAddress());
@@ -48,6 +83,7 @@ void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
   }
 
   // Check if we have a tilt beacon to process
+
   if (advertisedDevice->getManufacturerData().length() >= 24) {
     if (advertisedDevice->getManufacturerData()[0] == 0x4c &&
         advertisedDevice->getManufacturerData()[1] == 0x00 &&
@@ -133,21 +169,23 @@ bool BleScanner::connectGravitymonDevice(int idx) {
   NimBLERemoteService* srv = nullptr;
   NimBLERemoteCharacteristic* chr = nullptr;
 
-  srv = client->getService("180A");
+  srv = client->getService(SERV_UUID);
   
   if(srv) {
-    chr = srv->getCharacteristic("2900");
+    chr = srv->getCharacteristic(CHAR_UUID);
 
-    if(srv) {
-      if(chr->canRead()) {
-        _gravitymon[idx].data = chr->readValue();
-        Log.notice(F("uuid=%s, value=%s" CR), chr->getUUID().toString().c_str(), _gravitymon[idx].data.c_str());
-      }
+    if(chr && chr->canRead()) {
+      _gravitymon[idx].data = chr->readValue();
+      Log.notice(F("uuid=%s, value=%s" CR), chr->getUUID().toString().c_str(), _gravitymon[idx].data.c_str());
     } else {
       client->disconnect();
-      Log.warning(F("BLE : Unable to find service 180A!" CR));
+      Log.warning(F("BLE : Unable to find characteristic %s or not readable!" CR), CHAR_UUID);
       return false;
     }
+  } else {
+    client->disconnect();
+    Log.warning(F("BLE : Unable to find service %s!" CR), SERV_UUID);
+    return false;
   }
 
   Log.notice(F("BLE : Done reading data from gravitymon device!" CR));
@@ -165,7 +203,11 @@ void BleScanner::init() {
   _bleScan = NimBLEDevice::getScan(); 
   _bleScan->setAdvertisedDeviceCallbacks(_deviceCallbacks);
   _bleScan->setMaxResults(0);
+#if defined(ACTIVE_SCAN)
+  _bleScan->setActiveScan(true);
+#else
   _bleScan->setActiveScan(false);
+#endif
   _bleScan->setInterval(
       97);  // Select prime numbers to reduce risk of frequency beat pattern
             // with ibeacon advertisement interval
@@ -189,7 +231,11 @@ bool BleScanner::scan() {
   _bleScan->clearResults();
   _gravitymonCount = 0;
 
-  Log.notice(F("BLE : Starting passive scan." CR));
+#if defined(ACTIVE_SCAN)
+  Log.notice(F("BLE : Starting ACTIVE scan." CR));
+#else
+  Log.notice(F("BLE : Starting PASSIVE scan." CR));
+#endif
 
   if (_bleScan->start(_scanTime, nullptr, true)) {
     return true;
