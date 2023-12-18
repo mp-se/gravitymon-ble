@@ -406,11 +406,19 @@ TiltColor BleScanner::proccesTiltBeacon(const std::string& advertStringHex,
   uint16_t gravity = std::strtoul(gravityArray, nullptr, 16);
   uint8_t txPower = std::strtoul(txPowerArray, nullptr, 16);
 
-  Log.notice(F("BLE : Tilt data received %d, %d, %d" CR), temp, gravity,
-             txPower);
+  float gravityFactor = 1000;
+  float tempFactor = 1;
 
-  _tilt[color].gravity = gravity;
-  _tilt[color].tempF = temp;
+  if(gravity>=5000) { // check for tilt PRO
+    gravityFactor = 10000;
+    tempFactor = 10;
+  }
+
+  Log.notice(F("BLE : Tilt data received Temp=%sF, SG=%s, TxPower=%d, Pro=%s" CR), String(temp/tempFactor, 1).c_str(), String(gravity/gravityFactor, 4).c_str(),
+             txPower, gravity>=5000 ? "yes":"no");
+
+  _tilt[color].gravity = gravity / gravityFactor;
+  _tilt[color].tempF = temp / tempFactor;
   _tilt[color].txPower = txPower;
   _tilt[color].rssi = currentRSSI;
   _tilt[color].timeStamp = millis();
