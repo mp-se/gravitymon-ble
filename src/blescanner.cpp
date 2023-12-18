@@ -52,6 +52,9 @@ void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
   if( advertisedDevice->getName() == "gravitymon") {
     bool eddyStone = false;
 
+    /*for( int i = 0; i < advertisedDevice->getServiceDataCount(); i ++) // Print out the advertised services
+      Log.notice(F("BLE : Service: %d %s" CR), i, advertisedDevice->getServiceDataUUID(i).toString().c_str() );*/
+
     // Check if we have a gravitymon eddy stone beacon.
     for( int i = 0; i < advertisedDevice->getServiceDataCount(); i ++)
       if( advertisedDevice->getServiceDataUUID(i).toString() == "0xfeaa") // id for eddystone beacon
@@ -64,7 +67,7 @@ void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
       Log.notice(F("BLE : Processing gravitymon extended beacon" CR));
       bleScanner.processGravitymonExtBeacon(advertisedDevice->getAddress(), advertisedDevice->getServiceData(NimBLEUUID(SERV_UUID)));
     } else {
-      Log.notice(F("BLE : Processing gravitymon beacon (connect with device)" CR));
+      Log.notice(F("BLE : Processing gravitymon device (connect with device)" CR));
       bleScanner.processGravitymonBeacon(advertisedDevice->getAddress());
     }
 
