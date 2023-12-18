@@ -35,27 +35,27 @@ SOFTWARE.
 #include <NimBLEBeacon.h>
 #include <NimBLEDevice.h>
 
-#define SERV_UUID "180A" // Device Information (Payload)
-#define SERV2_UUID "1801" // Generic Access (Device Name)
-#define CHAR_UUID "2AC4" // Object Properties (Payload)
-#define EDDY_UUID "FEAA" // Google EddyStone advertisement
+#define SERV_UUID "180A"   // Device Information (Payload)
+#define SERV2_UUID "1801"  // Generic Access (Device Name)
+#define CHAR_UUID "2AC4"   // Object Properties (Payload)
+#define EDDY_UUID "FEAA"   // Google EddyStone advertisement
 
 class BleSender {
  private:
-  const int _sendTime = 500; // ms
+  const int _sendTime = 500;  // ms
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   NimBLEExtAdvertising* _advertising = nullptr;
 #else
   BLEAdvertising* _advertising = nullptr;
-#endif  
+#endif
   BLEServer* _server = nullptr;
   BLEService* _service = nullptr;
   BLECharacteristic* _characteristic = nullptr;
   BLEUUID _uuidTilt;
 
  public:
-  explicit BleSender();
+  BleSender();
 
   void init();
 

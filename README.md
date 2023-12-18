@@ -21,13 +21,13 @@ The gravitymon BLE sender will support 3 modes:
 
 ### The following table shows the data coverage. 
 
-| Option | Gravity | Temp | Angle | Battery | Interval | Name | Token | ChipID | 
-| :------ | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: |    
-| Tilt | Yes | Yes | - | - | - | - | - |
-| Tilt Pro | Yes | Yes | - | - | - | - | - |
-| GravityMon - Service/Characteritics | Yes| Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| GravityMon - Ext Advertisement | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| GravityMon - EddyStoneTLM | Yes | Yes | Yes | Yes | - | - | - | Yes |
+| Option | Gravity | Temp | Angle | Battery | Interval | Name | Token | ChipID | RSSI |
+| :------ | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: |    
+| Tilt | Yes | Yes | - | - | - | - | - | - | - |
+| Tilt Pro | Yes | Yes | - | - | - | - | - | - | - |
+| GravityMon - Service/Characteritics | Yes| Yes | Yes | Yes | Yes | Yes | Yes | Yes | - |
+| GravityMon - Ext Advertisement | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | - |
+| GravityMon - EddyStoneTLM | Yes | Yes | Yes | Yes | - | - | - | Yes | - |
 
 ## How the GRAVITYMON Service/Charateristc mode is implemented
 

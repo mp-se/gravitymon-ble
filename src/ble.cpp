@@ -33,40 +33,40 @@ SOFTWARE.
 // Tilt data format is described here. Only SG and Temp is transmitted over BLE.
 // https://kvurd.com/blog/tilt-hydrometer-ibeacon-data-format/
 
-class ServerCallbacks: public NimBLEServerCallbacks {
-    void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
-      Log.info(F("onConnect" CR)); 
-    };
+class ServerCallbacks : public NimBLEServerCallbacks {
+  void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) {
+    Log.info(F("onConnect" CR));
+  }
 
-    void onDisconnect(NimBLEServer* pServer) {
-      Log.info(F("onDisconnect" CR)); 
+  void onDisconnect(NimBLEServer* pServer) {
+    Log.info(F("onDisconnect" CR));
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-      BLEDevice::startAdvertising(0);
-      // BLEDevice::startAdvertising(1);
+    BLEDevice::startAdvertising(0);
+    // BLEDevice::startAdvertising(1);
 #endif
-    };
+  }
 };
 
 static ServerCallbacks myServerCallbacks;
 
-class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
+class CharacteristicCallbacks : public NimBLECharacteristicCallbacks {
  private:
   volatile bool _isRead = false;
 
  public:
-    void clearReadFlag() { _isRead = false; }
-    bool isRead() { return _isRead; }
+  void clearReadFlag() { _isRead = false; }
+  bool isRead() { return _isRead; }
 
-    void onRead(NimBLECharacteristic* pCharacteristic){
-      Log.info(F("onRead" CR)); 
-      _isRead = true;
-    }
+  void onRead(NimBLECharacteristic* pCharacteristic) {
+    Log.info(F("onRead" CR));
+    _isRead = true;
+  }
 };
 
 static CharacteristicCallbacks myCharCallbacks;
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-class AdvertisingCallbacks: public NimBLEExtAdvertisingCallbacks {
+class AdvertisingCallbacks : public NimBLEExtAdvertisingCallbacks {
  private:
   volatile bool _isRead = false;
 
@@ -75,11 +75,12 @@ class AdvertisingCallbacks: public NimBLEExtAdvertisingCallbacks {
   bool isRead() { return _isRead; }
 
   void onStopped(NimBLEExtAdvertising* pAdv, int reason, uint8_t inst_id) {
-    Log.info(F("onStopped" CR)); 
+    Log.info(F("onStopped" CR));
   }
 
-  void onScanRequest(NimBLEExtAdvertising *pAdv, uint8_t inst_id, NimBLEAddress addr) {
-    Log.info(F("onScanRequest" CR)); 
+  void onScanRequest(NimBLEExtAdvertising* pAdv, uint8_t inst_id,
+                     NimBLEAddress addr) {
+    Log.info(F("onScanRequest" CR));
     _isRead = true;
   }
 };
@@ -90,8 +91,7 @@ static AdvertisingCallbacks myAdvertisingCallbacks;
 BleSender::BleSender() {}
 
 void BleSender::init() {
-  if(_advertising != nullptr)
-    return;
+  if (_advertising != nullptr) return;
 
   BLEDevice::init("gravitymon");
   _advertising = BLEDevice::getAdvertising();
@@ -109,12 +109,14 @@ void BleSender::init() {
 #endif
 }
 
-void BleSender::sendEddystone(float battery, float tempC, float gravity, float angle) {
+void BleSender::sendEddystone(float battery, float tempC, float gravity,
+                              float angle) {
   Log.info(F("Starting eddystone data transmission" CR));
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-  Log.error(F("Sending eddystone over advanced advertising is NOT implemented."));
-#else  
+  Log.error(
+      F("Sending eddystone over advanced advertising is NOT implemented."));
+#else
   char beacon_data[25];
 
   uint16_t g = gravity * 10000;
@@ -127,19 +129,19 @@ void BleSender::sendEddystone(float battery, float tempC, float gravity, float a
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
 
-  beacon_data[0] = 0x20; // Eddystone Frame Type (Unencrypted Eddystone-TLM)
-  beacon_data[1] = 0x00; // TLM version
+  beacon_data[0] = 0x20;  // Eddystone Frame Type (Unencrypted Eddystone-TLM)
+  beacon_data[1] = 0x00;  // TLM version
   beacon_data[2] = (b >> 8);
-  beacon_data[3] = (b & 0xFF);           
-  beacon_data[4] = (t >> 8); 
-  beacon_data[5] = (t & 0xFF);           
-  beacon_data[6] = (g >> 8); 
-  beacon_data[7] = (g & 0xFF);           
-  beacon_data[8] = (a >> 8); 
-  beacon_data[9] = (a & 0xFF);           
+  beacon_data[3] = (b & 0xFF);
+  beacon_data[4] = (t >> 8);
+  beacon_data[5] = (t & 0xFF);
+  beacon_data[6] = (g >> 8);
+  beacon_data[7] = (g & 0xFF);
+  beacon_data[8] = (a >> 8);
+  beacon_data[9] = (a & 0xFF);
   beacon_data[10] = ((chipId & 0xFF000000) >> 24);
-  beacon_data[11] = ((chipId & 0xFF0000) >> 16);  
-  beacon_data[12] = ((chipId & 0xFF00) >> 8);    
+  beacon_data[11] = ((chipId & 0xFF0000) >> 16);
+  beacon_data[12] = ((chipId & 0xFF00) >> 8);
   beacon_data[13] = (chipId & 0xFF);
 
   BLEAdvertisementData advData = BLEAdvertisementData();
@@ -159,7 +161,8 @@ void BleSender::sendEddystone(float battery, float tempC, float gravity, float a
 #endif
 }
 
-void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tiltPro) {
+void BleSender::sendTiltData(String& color, float tempF, float gravSG,
+                             bool tiltPro) {
   Log.info(F("Starting tilt data transmission" CR));
 
   stopAdvertising();
@@ -183,10 +186,11 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
 
   Log.info(F("Using UUID %s" CR), _uuidTilt.toString().c_str());
 
-  uint16_t gravity = gravSG * 1000; // SG * 1000 or SG * 10000 for Tilt Pro/HD
-  uint16_t temperature = tempF; // Deg F _or_ Deg F * 10 for Tilt Pro/HD
+  uint16_t gravity = gravSG * 1000;  // SG * 1000 or SG * 10000 for Tilt Pro/HD
+  uint16_t temperature = tempF;      // Deg F _or_ Deg F * 10 for Tilt Pro/HD
 
-  if (tiltPro) { // Experimental, have not figured out how the receiver recognise between standard and Pro/HD
+  if (tiltPro) {  // Experimental, have not figured out how the receiver
+                  // recognise between standard and Pro/HD
     gravity = gravSG * 10000;
     temperature = tempF * 10;
   }
@@ -199,11 +203,11 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
   beacon.setMinor(gravity);
 
   NimBLEExtAdvertisement advData = NimBLEExtAdvertisement();
-  advData.setFlags(0x04);  
+  advData.setFlags(0x04);
   advData.setManufacturerData(beacon.getData());
   advData.setLegacyAdvertising(true);
 
-  if(_advertising->setInstanceData(0, advData) && _advertising->start(0)) {
+  if (_advertising->setInstanceData(0, advData) && _advertising->start(0)) {
     Log.info(F("Started advertising for #0" CR));
   } else {
     Log.info(F("Failed to start advertising for #0" CR));
@@ -211,7 +215,7 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
 
   delay(_sendTime);
   stopAdvertising();
-#else  
+#else
   BLEBeacon beacon = BLEBeacon();
   beacon.setManufacturerId(0x4C00);
   beacon.setProximityUUID(_uuidTilt);
@@ -219,11 +223,11 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
   beacon.setMinor(gravity);
 
   BLEAdvertisementData advData = BLEAdvertisementData();
-  advData.setFlags(0x04);  
+  advData.setFlags(0x04);
   advData.setManufacturerData(beacon.getData());
   _advertising->setAdvertisementData(advData);
 
-  _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON); 
+  _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON);
   _advertising->start();
   delay(_sendTime);
   stopAdvertising();
@@ -235,31 +239,35 @@ void BleSender::sendGravitymonData(String& payload) {
   stopAdvertising();
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-  if (!_server) { 
+  if (!_server) {
     _server = BLEDevice::createServer();
     _server->setCallbacks(&myServerCallbacks);
     _service = _server->createService(SERV_UUID);
-    _characteristic = _service->createCharacteristic(CHAR_UUID, NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
+    _characteristic = _service->createCharacteristic(
+        CHAR_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::BROADCAST);
     _characteristic->setCallbacks(&myCharCallbacks);
     _service->start();
 
     _advertising->setCallbacks(&myAdvertisingCallbacks);
 
     NimBLEExtAdvertisement advData = NimBLEExtAdvertisement();
-    advData.setFlags(0x04);  
+    advData.setFlags(0x04);
     advData.setLegacyAdvertising(true);
     advData.setConnectable(true);
     advData.setScannable(true);
     advData.setName("gravitymon");
     advData.setCompleteServices16({_service->getUUID()});
 
-    // Extended advertising stops after disconnect so its started in the advertising callback again
+    // Extended advertising stops after disconnect so its started in the
+    // advertising callback again
 
-    if(_advertising->setInstanceData(0, advData) && _advertising->start(0)) {
-      Log.info(F("Started advertising for #0" CR));
-    } else {
-      Log.info(F("Failed to start advertising for #0" CR));
+    if (!_advertising->setInstanceData(0, advData)) {
+      Log.info(F("Failed to set advertising data for #0" CR));
     }
+  }
+
+  if (!_advertising->start(0)) {
+    Log.info(F("Failed to start advertising for #0" CR));
   }
 #else
   if (!_server) {
@@ -267,7 +275,8 @@ void BleSender::sendGravitymonData(String& payload) {
     _server->setCallbacks(&myServerCallbacks);
 
     _service = _server->createService(SERV_UUID);
-    _characteristic = _service->createCharacteristic(CHAR_UUID, NIMBLE_PROPERTY::READ|NIMBLE_PROPERTY::BROADCAST );
+    _characteristic = _service->createCharacteristic(
+        CHAR_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::BROADCAST);
     _characteristic->setValue("{}");
     _characteristic->setCallbacks(&myCharCallbacks);
     _service->start();
@@ -278,10 +287,10 @@ void BleSender::sendGravitymonData(String& payload) {
     _advertising->setMinPreferred(0x06);
     _advertising->setMaxPreferred(0x12);
   }
+  _advertising->start();
 #endif
   clearReadFlags();
   _characteristic->setValue(payload);
-  _advertising->start();
   Log.info(F("Characteristic defined, ready for reading!" CR));
 }
 
@@ -290,7 +299,7 @@ void BleSender::sendGravitymonDataExtended(String& payload) {
   stopAdvertising();
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-  if (!_server) { 
+  if (!_server) {
     _server = BLEDevice::createServer();
     _server->setCallbacks(&myServerCallbacks);
     _service = _server->createService(SERV_UUID);
@@ -299,9 +308,9 @@ void BleSender::sendGravitymonDataExtended(String& payload) {
     _advertising->setCallbacks(&myAdvertisingCallbacks);
   }
 
-  // This is for extended advertising and sending a smaller payload. 
-  // Can be read by another ESP32 but not my iPhone or Windows computer, see Client target.
-  // Requires active scanning to be able to detect this.
+  // This is for extended advertising and sending a smaller payload.
+  // Can be read by another ESP32 but not my iPhone or Windows computer, see
+  // Client target. Requires active scanning to be able to detect this.
 
   NimBLEExtAdvertisement extData(BLE_HCI_LE_PHY_1M, BLE_HCI_LE_PHY_2M);
 
@@ -309,11 +318,13 @@ void BleSender::sendGravitymonDataExtended(String& payload) {
   extData.setConnectable(false);
   extData.setServiceData(NimBLEUUID(SERV_UUID), std::string(payload.c_str()));
   extData.setServiceData(NimBLEUUID(SERV2_UUID), std::string("gravitymon_ext"));
-  extData.setShortName("gravitymon");
-  extData.setCompleteServices16({NimBLEUUID(SERV_UUID),NimBLEUUID(SERV2_UUID)});
+  // extData.setShortName("gravitymon");
+  extData.setName("gravitymon");
+  extData.setCompleteServices16(
+      {NimBLEUUID(SERV_UUID), NimBLEUUID(SERV2_UUID)});
   extData.enableScanRequestCallback(true);
 
-  if(_advertising->setInstanceData(0, extData) && _advertising->start(0)) {
+  if (_advertising->setInstanceData(0, extData) && _advertising->start(0)) {
     Log.info(F("Started advertising for #0" CR));
   } else {
     Log.info(F("Failed to start advertising for #0" CR));
@@ -342,7 +353,8 @@ void BleSender::clearReadFlags() {
 }
 
 void BleSender::stopAdvertising() {
-  delay(_sendTime); // Allow for tranmissions to be completed, flag is set when scan is initiated
+  delay(_sendTime);  // Allow for tranmissions to be completed, flag is set when
+                     // scan is initiated
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   BLEDevice::stopAdvertising(0);
 #else

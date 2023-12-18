@@ -45,7 +45,7 @@ class BleDeviceCallbacks : public NimBLEAdvertisedDeviceCallbacks {
 };
 
 class BleClientCallbacks : public NimBLEClientCallbacks {
-  void onConnect(NimBLEClient* pClient) override;
+  void onConnect(NimBLEClient *pClient) override;
 };
 
 enum TiltColor {
@@ -74,8 +74,10 @@ struct GravitymonData {
   bool doConnect;
 };
 
-const auto NO_TILT_COLORS = 8; // Number of tilt devices that can be managed (one per color)
-const auto NO_GRAVITYMON = 4; // Number of gravitymon devices that can be handled
+const auto NO_TILT_COLORS =
+    8;  // Number of tilt devices that can be managed (one per color)
+const auto NO_GRAVITYMON =
+    4;  // Number of gravitymon devices that can be handled
 
 class BleScanner {
  public:
@@ -90,8 +92,10 @@ class BleScanner {
                               const int8_t &currentRSSI);
 
   void processGravitymonBeacon(NimBLEAddress address);
-  void processGravitymonEddystoneBeacon(NimBLEAddress address, const uint8_t *payload);
-  void processGravitymonExtBeacon(NimBLEAddress address, const std::string &payload);
+  void processGravitymonEddystoneBeacon(NimBLEAddress address,
+                                        const uint8_t *payload);
+  void processGravitymonExtBeacon(NimBLEAddress address,
+                                  const std::string &payload);
 
   TiltData getTiltData(TiltColor col) { return _tilt[col]; }
 
