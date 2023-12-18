@@ -162,6 +162,8 @@ void BleSender::sendEddystone(float battery, float tempC, float gravity, float a
 void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tiltPro) {
   Log.info(F("Starting tilt data transmission" CR));
 
+  stopAdvertising();
+
   if (!color.compareTo("red"))
     _uuidTilt = BLEUUID::fromString("A495BB10-C5B1-4B44-B512-1370F02D74DE");
   else if (!color.compareTo("green"))
@@ -208,7 +210,7 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
   }
 
   delay(_sendTime);
-  _advertising->stop(0);
+  stopAdvertising();
 #else  
   BLEBeacon beacon = BLEBeacon();
   beacon.setManufacturerId(0x4C00);
@@ -224,12 +226,14 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
   _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON); 
   _advertising->start();
   delay(_sendTime);
-  _advertising->stop();
+  stopAdvertising();
 #endif
 }
 
 void BleSender::sendGravitymonData(String& payload) {
   Log.info(F("Starting gravitymon data transmission" CR));
+  stopAdvertising();
+
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   if (!_server) { 
     _server = BLEDevice::createServer();
@@ -269,19 +273,22 @@ void BleSender::sendGravitymonData(String& payload) {
     _service->start();
 
     _advertising->addServiceUUID(_service->getUUID());
-    _advertising->setScanResponse(true);
+    _advertising->setName("gravitymon");
+    _advertising->setScanResponse(false);
     _advertising->setMinPreferred(0x06);
     _advertising->setMaxPreferred(0x12);
-    _advertising->start();
   }
 #endif
   clearReadFlags();
   _characteristic->setValue(payload);
+  _advertising->start();
   Log.info(F("Characteristic defined, ready for reading!" CR));
 }
 
 void BleSender::sendGravitymonDataExtended(String& payload) {
   Log.info(F("Starting gravitymon extended data transmission" CR));
+  stopAdvertising();
+
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   if (!_server) { 
     _server = BLEDevice::createServer();
@@ -295,8 +302,6 @@ void BleSender::sendGravitymonDataExtended(String& payload) {
   // This is for extended advertising and sending a smaller payload. 
   // Can be read by another ESP32 but not my iPhone or Windows computer, see Client target.
   // Requires active scanning to be able to detect this.
-
-  _advertising->stop(0);
 
   NimBLEExtAdvertisement extData(BLE_HCI_LE_PHY_1M, BLE_HCI_LE_PHY_2M);
 
@@ -337,7 +342,7 @@ void BleSender::clearReadFlags() {
 }
 
 void BleSender::stopAdvertising() {
-  delay(500); // Allow for tranmissions to be completed, flag is set when scan is initiated
+  delay(_sendTime); // Allow for tranmissions to be completed, flag is set when scan is initiated
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   BLEDevice::stopAdvertising(0);
 #else

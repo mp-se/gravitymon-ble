@@ -47,7 +47,7 @@ const char* CHAR_UUID = "2AC4";
 void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
 
   // Log.notice(F("BLE : %s" CR), advertisedDevice->toString().c_str());
-  // Log.notice(F("BLE : %s %s" CR), advertisedDevice->getName().c_str(), advertisedDevice->getAddress().toString().c_str());
+  Log.notice(F("BLE : %s %s" CR), advertisedDevice->getName().c_str(), advertisedDevice->getAddress().toString().c_str());
 
   if( advertisedDevice->getName() == "gravitymon") {
     bool eddyStone = false;

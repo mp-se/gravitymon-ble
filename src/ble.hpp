@@ -42,7 +42,7 @@ SOFTWARE.
 
 class BleSender {
  private:
-  const int _sendTime = 1000; // ms
+  const int _sendTime = 500; // ms
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
   NimBLEExtAdvertising* _advertising = nullptr;
