@@ -11,13 +11,13 @@ The gravitymon BLE sender will support 3 modes:
 
 ### The following table shows the client options for receiving the data. 
 
-| Option | Passive Scan | Active Scan | Connect |
-| :------ | :------: | :------: | :------: |  
-| Tilt | Yes | Yes | No |
-| Tilt Pro | Yes | Yes | No |
-| GravityMon - Service/Characteritics | Yes | Yes | Yes |
-| GravityMon - Ext Advertisement | No | Yes | No |
-| GravityMon - EddyStoneTLM | No | Yes | No |
+| Option | Passive Scan | Active Scan | Connect | ESP32 | Win/Python |
+| :------ | :------: | :------: | :------: | :------: | :------: |
+| Tilt | Yes | Yes | No | Yes | Yes |
+| Tilt Pro | Yes | Yes | No | Yes | Yes |
+| GravityMon - Service/Characteritics | Yes | Yes | Yes | Yes | Yes |
+| GravityMon - Ext Advertisement | No | Yes | No | Yes | No |
+| GravityMon - EddyStoneTLM | No | Yes | No | Yes | Yes |
 
 ### The following table shows the data coverage. 
 
@@ -41,12 +41,9 @@ Its expected to double the battery life for the device compared to sending the s
 
 ## How the GRAVITYMON extended advertisement mode is implemented
 
-This is still work in progress and there are some challenges to overcome.
+This option will send the data as part of an extended advertisement, this allows for up to 252 bytes of data.
 
-* Unclear how the support is implemented in various devices
-* Unclear if this is supported by the IDF/Arduino framework
-
-Simply this does not work at the moment so more trouble shooting is required.
+Works with the esp32 client in this project but not with a Windows computer nor an iPhone. 
 
 # Targets in this project
 

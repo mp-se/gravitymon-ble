@@ -1,7 +1,7 @@
 import asyncio, logging, json
 from uuid import UUID
 
-from construct import Array, Byte, Const, Int8sl, Int16ub, Struct
+from construct import Array, Byte, Const, Int8sl, Int16ub, Struct, Int32ub
 from construct.core import ConstError
 
 from bleak import BleakScanner, BleakClient
@@ -16,6 +16,15 @@ ibeacon_format = Struct(
     "major" / Int16ub,
     "minor" / Int16ub,
     "power" / Int8sl,
+)
+
+eddystone_format = Struct(
+    "type_length" / Const(b"\x20\x00"),
+    "battery" / Int16ub,
+    "temp" / Int16ub,
+    "gravity" / Int16ub,
+    "angle" / Int16ub,
+    "chipid" / Int32ub,
 )
 
 class tilt:
@@ -85,6 +94,24 @@ def parse_tilt(device: BLEDevice, advertisement_data: AdvertisementData):
     except ConstError as e:
         pass
 
+def parse_eddystone(device: BLEDevice, advertisement_data: AdvertisementData):
+   
+    try:      
+        uuid = advertisement_data.service_uuids[0]
+        data = advertisement_data.service_data.get(uuid)
+        eddy = eddystone_format.parse(data)
+
+        data = {
+            "battery": eddy.battery/1000,
+            "gravity": eddy.gravity/10000,
+            "temperature": eddy.temp/1000, 
+            "angle": eddy.angle/100,
+            "chipid": hex(eddy.chipid)[2:],
+        }
+        logger.info( "Data received: %s %s", json.dumps(data), device.address )
+    except ConstError as e:
+        pass
+
 async def main():
     logging.basicConfig(
         level=logging.INFO,
@@ -99,12 +126,11 @@ async def main():
         logger.info("Scanning for tilt/gravitymon BLE devices...")
         results = await scanner.discover(timeout=3,return_adv=True)     
         for d, a  in results.values():
-            #print(a.service_uuids, d.name)
-            if d.name == "gravitymon":
+            if d.name == "gravitymon" and any("0000feaa-" in s for s in a.service_uuids):
+                parse_eddystone(d,a)
+            elif d.name == "gravitymon":
                 await parse_gravitymon(d)
             else:
                 parse_tilt(d,a)
-
-        #exit(1)
 
 asyncio.run(main())
