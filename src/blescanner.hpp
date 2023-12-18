@@ -90,6 +90,7 @@ class BleScanner {
                               const int8_t &currentRSSI);
 
   void processGravitymonBeacon(NimBLEAddress address);
+  void processGravitymonEddystoneBeacon(NimBLEAddress address, const uint8_t *payload);
   void processGravitymonExtBeacon(NimBLEAddress address, const std::string &payload);
 
   TiltData getTiltData(TiltColor col) { return _tilt[col]; }

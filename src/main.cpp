@@ -16,7 +16,7 @@ void setup() {
   snprintf(&chip[0], sizeof(chip), "%6x", chipId);
   Log.notice(F("Main: Started setup for %s." CR), &chip[0]);
 
-#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT)
+#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT) || defined(SERVER_EDDY)
   Log.info(F("Running in BROADCAST mode!" CR));
   myBleSender = new BleSender();
   myBleSender->init();
@@ -42,6 +42,11 @@ void loop() {
   Log.info(F("Tilt PRO beacon started" CR));
   String color("green");
   myBleSender->sendTiltData(color, 41.234, 1.23456, true);
+#endif
+
+#if defined(SERVER_EDDY)
+  Log.info(F("EddyStone beacon started" CR));
+  myBleSender->sendEddyStone(3.34567, 42.12345, 1.234567, 89.76543);
 #endif
 
 #if defined(SERVER_GRAVITYMON)
@@ -91,7 +96,7 @@ void loop() {
   myBleSender->stopAdvertising();
 #endif
 
-#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT)
+#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) || defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT) || defined(SERVER_EDDY)
   delay(10000);
 #endif
 

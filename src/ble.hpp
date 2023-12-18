@@ -37,7 +37,8 @@ SOFTWARE.
 
 #define SERV_UUID "180A" // Device Information (Payload)
 #define SERV2_UUID "1801" // Generic Access (Device Name)
-#define CHAR_UUID "2AC4" // Object Properties (Payload);
+#define CHAR_UUID "2AC4" // Object Properties (Payload)
+#define EDDY_UUID "FEAA" // Google EddyStone advertisement
 
 class BleSender {
  private:
@@ -59,6 +60,8 @@ class BleSender {
   void init();
 
   void sendTiltData(String& color, float tempF, float gravSG, bool tiltPro);
+
+  void sendEddystone(float battery, float tempC, float gravity, float angle);
 
   void sendGravitymonData(String& payload);
   void sendGravitymonDataExtended(String& payload);

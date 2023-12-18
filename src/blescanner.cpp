@@ -47,20 +47,28 @@ const char* CHAR_UUID = "2AC4";
 void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
 
   // Log.notice(F("BLE : %s" CR), advertisedDevice->toString().c_str());
+  // Log.notice(F("BLE : %s %s" CR), advertisedDevice->getName().c_str(), advertisedDevice->getAddress().toString().c_str());
 
-  // Check if we have a gravitymon ext beacon to process with data in advertisment.
+  if( advertisedDevice->getName() == "gravitymon") {
+    bool eddyStone = false;
 
-  if( advertisedDevice->getName() == "gravitymon" && advertisedDevice->getServiceData(NimBLEUUID(SERV2_UUID)) == "gravitymon_ext") {
+    // Check if we have a gravitymon eddy stone beacon.
+    for( int i = 0; i < advertisedDevice->getServiceDataCount(); i ++)
+      if( advertisedDevice->getServiceDataUUID(i).toString() == "0xfeaa") // id for eddystone beacon
+        eddyStone = true;
+
+    if(eddyStone) {
+      Log.notice(F("BLE : Processing gravitymon eddy stone beacon" CR));
+      bleScanner.processGravitymonEddystoneBeacon(advertisedDevice->getAddress(), advertisedDevice->getPayload());
+    } else if( advertisedDevice->getServiceData(NimBLEUUID(SERV2_UUID)) == "gravitymon_ext") {
       Log.notice(F("BLE : Processing gravitymon extended beacon" CR));
       bleScanner.processGravitymonExtBeacon(advertisedDevice->getAddress(), advertisedDevice->getServiceData(NimBLEUUID(SERV_UUID)));
-  }
-
-  // Check if we have a gravitymon beacon to process (legacy mode) that require us to connect with the device.
-
-  else if (advertisedDevice->getName() == "gravitymon") {
-      Log.notice(F("BLE : Processing gravitymon beacon" CR));
+    } else {
+      Log.notice(F("BLE : Processing gravitymon beacon (connect with device)" CR));
       bleScanner.processGravitymonBeacon(advertisedDevice->getAddress());
-      //NimBLEDevice::getScan()->stop();
+    }
+
+    return;
   }
 
   // Check if we have a tilt beacon to process
@@ -82,6 +90,63 @@ void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
 void BleClientCallbacks::onConnect(NimBLEClient* client) {
   Log.notice(F("BLE : Client connected"));
   //client->updateConnParams(120,120,0,60);
+}
+
+void BleScanner::processGravitymonEddystoneBeacon(NimBLEAddress address, const uint8_t *payload) {
+
+  //                                                                      <-------------- beacon data ------------>      
+  // 0b 09 67 72 61 76 69 74 79 6d 6f 6e 02 01 06 03 03 aa fe 11 16 aa fe 20 00 0c 8b 10 8b 00 00 30 39 00 00 16 2e
+
+  payload = payload + 23;
+
+  /*
+  uint8_t buf[50];
+  BLEUtils u;
+  u.buildHexData(&buf[0], payload, 14);
+  Log.notice(F("BLE : eddy=%s" CR), &buf[0]);
+  */
+
+  float battery;
+  float temp;
+  float gravity;
+  float angle;
+  uint32_t chipId;
+
+  battery = static_cast<float>((*(payload+2)<<8) | *(payload+3)) / 1000; 
+  temp = static_cast<float>((*(payload+4)<<8) | *(payload+5)) / 1000; 
+  gravity = static_cast<float>((*(payload+6)<<8) | *(payload+7)) / 10000; 
+  angle = static_cast<float>((*(payload+8)<<8) | *(payload+9)) / 100; 
+  chipId = (*(payload+10)<<24) | (*(payload+11)<<16) | (*(payload+12)<<8) | *(payload+13); 
+
+  char chip[20];
+  snprintf(&chip[0], sizeof(chip), "%6x", chipId);
+
+  DynamicJsonDocument out(500);
+  out["name"] = "";
+  out["ID"] = &chip[0];
+  out["token"] = "";
+  out["interval"] = 0;
+  out["temperature"] = serialized(String(temp, 2));
+  out["temp_units"] = "C";
+  out["gravity"] = serialized(String(gravity, 4));
+  out["angle"] = serialized(String(angle, 2));
+  out["battery"] = serialized(String(battery, 2));
+  out["RSSI"] = 0;
+
+  String str;
+  str.reserve(500);
+  serializeJson(out, str);
+  out.clear();
+
+  if(_gravitymonCount < NO_GRAVITYMON) {
+    _gravitymon[_gravitymonCount].address = address;
+    _gravitymon[_gravitymonCount].data = str;
+    _gravitymon[_gravitymonCount].doConnect = false;
+    _gravitymonCount++;
+  }
+  else {
+    Log.notice(F("BLE : Max devices reached - no more devices available." CR));
+  }
 }
 
 void BleScanner::processGravitymonExtBeacon(NimBLEAddress address, const std::string &payload) {

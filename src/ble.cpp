@@ -109,6 +109,56 @@ void BleSender::init() {
 #endif
 }
 
+void BleSender::sendEddystone(float battery, float tempC, float gravity, float angle) {
+  Log.info(F("Starting eddystone data transmission" CR));
+
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+  Log.error(F("Sending eddystone over advanced advertising is NOT implemented."));
+#else  
+  char beacon_data[25];
+
+  uint16_t g = gravity * 10000;
+  uint16_t t = tempC * 1000;
+  uint16_t b = battery * 1000;
+  uint16_t a = angle * 100;
+  uint32_t chipId = 0;
+
+  for (int i = 0; i < 17; i = i + 8) {
+    chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+  }
+
+  beacon_data[0] = 0x20; // Eddystone Frame Type (Unencrypted Eddystone-TLM)
+  beacon_data[1] = 0x00; // TLM version
+  beacon_data[2] = (b >> 8);
+  beacon_data[3] = (b & 0xFF);           
+  beacon_data[4] = (t >> 8); 
+  beacon_data[5] = (t & 0xFF);           
+  beacon_data[6] = (g >> 8); 
+  beacon_data[7] = (g & 0xFF);           
+  beacon_data[8] = (a >> 8); 
+  beacon_data[9] = (a & 0xFF);           
+  beacon_data[10] = ((chipId & 0xFF000000) >> 24);
+  beacon_data[11] = ((chipId & 0xFF0000) >> 16);  
+  beacon_data[12] = ((chipId & 0xFF00) >> 8);    
+  beacon_data[13] = (chipId & 0xFF);
+
+  BLEAdvertisementData advData = BLEAdvertisementData();
+  BLEAdvertisementData respData = BLEAdvertisementData();
+
+  respData.setFlags(0x06);
+  respData.setCompleteServices(BLEUUID(EDDY_UUID));
+  respData.setServiceData(BLEUUID(EDDY_UUID), std::string(beacon_data, 14));
+
+  advData.setName("gravitymon");
+  _advertising->setAdvertisementData(advData);
+  _advertising->setScanResponseData(respData);
+
+  _advertising->start();
+  delay(_sendTime);
+  _advertising->stop();
+#endif
+}
+
 void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tiltPro) {
   Log.info(F("Starting tilt data transmission" CR));
 
@@ -131,8 +181,8 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG, bool tilt
 
   Log.info(F("Using UUID %s" CR), _uuidTilt.toString().c_str());
 
-  uint16_t gravity = gravSG * 1000;  // SG * 1000 or SG * 10000 for Tilt Pro/HD
-  uint16_t temperature = tempF;      // Deg F _or_ Deg F * 10 for Tilt Pro/HD
+  uint16_t gravity = gravSG * 1000; // SG * 1000 or SG * 10000 for Tilt Pro/HD
+  uint16_t temperature = tempF; // Deg F _or_ Deg F * 10 for Tilt Pro/HD
 
   if (tiltPro) { // Experimental, have not figured out how the receiver recognise between standard and Pro/HD
     gravity = gravSG * 10000;

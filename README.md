@@ -9,7 +9,27 @@ The gravitymon BLE sender will support 3 modes:
 * Gravitymon (Service Characteristics with up to 512 bytes of data), requires a client to connect to the device to read data.
 * Gravitymon Extended Advertisement (BLE5 Advertisement with up to 252 bytes of data), requires an active client to detect the data.
 
-## How the GRAVITYMON mode is implemented
+The following table shows the client options for receiving the data. 
+
+| Option | Passive Scan | Active Scan | Connect |
+| :------ | :------: | :------: | :------: |  
+| Tilt | Yes | Yes | No |
+| Tilt Pro | Yes | Yes | No |
+| GravityMon - Service/Characteritics | Yes | Yes | Yes |
+| GravityMon - Ext Advertisement | No | Yes | No |
+| GravityMon - EddyStoneTLM | No | Yes | No |
+
+The following table shows the data coverage. 
+
+| Option | Gravity | Temp | Angle | Battery | Interval | Name | Token | ChipID | 
+| :------ | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: |    
+| Tilt | Yes | Yes | - | - | - | - | - |
+| Tilt Pro | Yes | Yes | - | - | - | - | - |
+| GravityMon - Service/Characteritics | Yes| Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| GravityMon - Ext Advertisement | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| GravityMon - EddyStoneTLM | Yes | Yes | Yes | Yes | - | - | - | Yes |
+
+## How the GRAVITYMON Service/Charateristc mode is implemented
 
 This option is under battery testing to see what benefits this will bring.
 
