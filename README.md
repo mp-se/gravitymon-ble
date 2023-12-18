@@ -9,7 +9,7 @@ The gravitymon BLE sender will support 3 modes:
 * Gravitymon (Service Characteristics with up to 512 bytes of data), requires a client to connect to the device to read data.
 * Gravitymon Extended Advertisement (BLE5 Advertisement with up to 252 bytes of data), requires an active client to detect the data.
 
-The following table shows the client options for receiving the data. 
+### The following table shows the client options for receiving the data. 
 
 | Option | Passive Scan | Active Scan | Connect |
 | :------ | :------: | :------: | :------: |  
@@ -19,7 +19,7 @@ The following table shows the client options for receiving the data.
 | GravityMon - Ext Advertisement | No | Yes | No |
 | GravityMon - EddyStoneTLM | No | Yes | No |
 
-The following table shows the data coverage. 
+### The following table shows the data coverage. 
 
 | Option | Gravity | Temp | Angle | Battery | Interval | Name | Token | ChipID | 
 | :------ | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: |    
