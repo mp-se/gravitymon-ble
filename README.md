@@ -13,8 +13,9 @@ The gravitymon BLE sender will support 3 modes:
 
 | Option | Passive Scan | Active Scan | Connect | ESP32 | Win/Python |
 | :------ | :------: | :------: | :------: | :------: | :------: |
-| Tilt | Yes | Yes | No | Yes | Yes |
-| Tilt Pro | Yes | Yes | No | Yes | Yes |
+| iBeacon/Tilt | Yes | Yes | No | Yes | Yes |
+| iBeacon/Tilt Pro | Yes | Yes | No | Yes | Yes |
+| iBeacon/Gravmon | Yes | Yes | No | Yes | Yes |
 | GravityMon - Service/Characteritics | Yes | Yes | Yes | Yes | Yes |
 | GravityMon - Ext Advertisement | No | Yes | No | Yes | No |
 | GravityMon - EddyStoneTLM | No | Yes | No | Yes | Yes |
@@ -23,8 +24,9 @@ The gravitymon BLE sender will support 3 modes:
 
 | Option | Gravity | Temp | Angle | Battery | Interval | Name | Token | ChipID | RSSI |
 | :------ | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: |    
-| Tilt | Yes | Yes | - | - | - | - | - | - | - |
-| Tilt Pro | Yes | Yes | - | - | - | - | - | - | - |
+| iBeacon/Tilt | Yes | Yes | - | - | - | - | - | - | - |
+| iBeacon/Tilt Pro | Yes | Yes | - | - | - | - | - | - | - |
+| iBeacon/GravityMon | Yes | Yes | Yes | Yes | - | - | - | Yes | - |
 | GravityMon - Service/Characteritics | Yes| Yes | Yes | Yes | Yes | Yes | Yes | Yes | - |
 | GravityMon - Ext Advertisement | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | - |
 | GravityMon - EddyStoneTLM | Yes | Yes | Yes | Yes | - | - | - | Yes | - |

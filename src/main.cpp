@@ -42,7 +42,7 @@ void setup() {
 
 #if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) ||             \
     defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT) || \
-    defined(SERVER_EDDY)
+    defined(SERVER_EDDY) || defined(SERVER_CUSTOM)
   Log.info(F("Running in BROADCAST mode!" CR));
   myBleSender = new BleSender();
   myBleSender->init();
@@ -72,7 +72,12 @@ void loop() {
 
 #if defined(SERVER_EDDY)
   Log.info(F("EddyStone beacon started" CR));
-  myBleSender->sendEddystone(3.34567, 42.12345, 1.234567, 89.76543);
+  myBleSender->sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
+#endif
+
+#if defined(SERVER_CUSTOM)
+  Log.info(F("Custom beacon started" CR));
+  myBleSender->sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
 #endif
 
 #if defined(SERVER_GRAVITYMON)
@@ -129,7 +134,7 @@ void loop() {
 
 #if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) ||             \
     defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT) || \
-    defined(SERVER_EDDY)
+    defined(SERVER_EDDY) || defined(SERVER_CUSTOM)
   delay(10000);
 #endif
 

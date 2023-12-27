@@ -109,7 +109,7 @@ void BleSender::init() {
 #endif
 }
 
-void BleSender::sendEddystone(float battery, float tempC, float gravity,
+void BleSender::sendEddystoneData(float battery, float tempC, float gravity,
                               float angle) {
   Log.info(F("Starting eddystone data transmission" CR));
 
@@ -225,6 +225,130 @@ void BleSender::sendTiltData(String& color, float tempF, float gravSG,
   BLEAdvertisementData advData = BLEAdvertisementData();
   advData.setFlags(0x04);
   advData.setManufacturerData(beacon.getData());
+  _advertising->setAdvertisementData(advData);
+
+  _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON);
+  _advertising->start();
+  delay(_sendTime);
+  stopAdvertising();
+#endif
+}
+
+void BleSender::sendCustomBeaconData(float battery, float tempC, float gravity, float angle) {
+  Log.info(F("Starting custom beacon data transmission" CR));
+
+  stopAdvertising();
+
+  uint16_t g = gravity * 10000;
+  uint16_t t = tempC * 1000;
+  uint16_t b = battery * 1000;
+  uint16_t a = angle * 100;
+  uint32_t chipId = 0;
+
+  for (int i = 0; i < 17; i = i + 8) {
+    chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+  }
+
+  _uuidTilt = BLEUUID::fromString("A495BB10-C5B1-4B44-B512-1370F02D74DE");
+
+#if defined(CONFIG_BT_NIMBLE_EXT_ADV)
+#error "Not yet implemented"
+#else
+  /*BLEBeacon beacon = BLEBeacon();
+  beacon.setManufacturerId(0x4C00);
+  beacon.setProximityUUID(_uuidTilt);
+  beacon.setMajor(t);
+  beacon.setMinor(g);
+
+  const char *p = beacon.getData().c_str();
+  for(int i = 0; i < beacon.getData().length(); i++ ) {
+    Serial.printf("%X%X ", (*(p+i)&0xf0)>>4, (*(p+i)&0x0f));
+  }
+  Serial.println();*/
+
+  _uuidTilt = BLEUUID::fromString("A495BB10-C5B1-4B44-B512-1370F02D74DE");
+
+  std::string mf = "";
+  
+  mf += (char) 0x4C; // Manuf ID 
+  mf += (char) 0x00; 
+  mf += (char) 0x03; // SubType
+  mf += (char) 0x15; // SubType Length
+
+  // mf += (char) 0xA4; // UUID (32)
+  // mf += (char) 0x95;
+  // mf += (char) 0xBB;
+  // mf += (char) 0x10;
+  // mf += (char) 0xC5; 
+  // mf += (char) 0xB1;
+  // mf += (char) 0x4B; 
+  // mf += (char) 0x44;
+  mf += "GRAVMON.";
+
+  // mf += (char) 0xB5; // ChipID
+  // mf += (char) 0x12;
+  // mf += (char) 0x13; //
+  // mf += (char) 0x70;
+  mf += (char) ((chipId & 0xFF000000) >> 24); // chipid 
+  mf += (char) ((chipId & 0xFF0000) >> 16);
+  mf += (char) ((chipId & 0xFF00) >> 8);
+  mf += (char) (chipId & 0xFF);
+
+  // mf += (char) 0xF0; // Angle (angle*100) 
+  // mf += (char) 0x2D; 
+  mf += (char) (a >> 8); // Angle (angle*100)
+  mf += (char) (a & 0xFF);
+
+  // mf += (char) 0x74; // Battery (batt_v*1000)
+  // mf += (char) 0xDE;
+  mf += (char) (b >> 8); // Battery (batt_v*1000)
+  mf += (char) (b & 0xFF);
+
+  // mf += (char) 0x00; // Gravity (gravity_sg*10000)
+  // mf += (char) 0x2A;
+  mf += (char) (g >> 8); // Gravity (gravity_sg*10000)
+  mf += (char) (g & 0xFF);
+
+  // mf += (char) 0x04; // Temperature (temp_c*1000)
+  // mf += (char) 0xD2;  
+  mf += (char) (t >> 8); // Temperature (temp_c*1000)
+  mf += (char) (t & 0xFF);
+
+  mf += (char) 0x00; // Signal
+
+/*
+  uint16_t g = gravity * 10000;
+  uint16_t t = tempC * 1000;
+  uint16_t b = battery * 1000;
+  uint16_t a = angle * 100;
+  uint32_t chipId = 0;
+
+  beacon_data[0] = 0x20;  // Eddystone Frame Type (Unencrypted Eddystone-TLM)
+  beacon_data[1] = 0x00;  // TLM version
+  beacon_data[2] = (b >> 8);
+  beacon_data[3] = (b & 0xFF);
+  beacon_data[4] = (t >> 8);
+  beacon_data[5] = (t & 0xFF);
+  beacon_data[6] = (g >> 8);
+  beacon_data[7] = (g & 0xFF);
+  beacon_data[8] = (a >> 8);
+  beacon_data[9] = (a & 0xFF);
+  beacon_data[10] = ((chipId & 0xFF000000) >> 24);
+  beacon_data[11] = ((chipId & 0xFF0000) >> 16);
+  beacon_data[12] = ((chipId & 0xFF00) >> 8);
+  beacon_data[13] = (chipId & 0xFF);
+*/
+
+  const char *p = mf.c_str();
+  for(int i = 0; i < mf.length(); i++ ) {
+    Serial.printf("%X%X ", (*(p+i)&0xf0)>>4, (*(p+i)&0x0f));
+  }
+  Serial.println();
+
+  BLEAdvertisementData advData = BLEAdvertisementData();
+  advData.setFlags(0x04);
+  // advData.setManufacturerData(beacon.getData());
+  advData.setManufacturerData(mf);
   _advertising->setAdvertisementData(advData);
 
   _advertising->setAdvertisementType(BLE_GAP_CONN_MODE_NON);

@@ -10,11 +10,22 @@ from bleak.backends.scanner import AdvertisementData
 
 logger = logging.getLogger(__name__)
 
-ibeacon_format = Struct(
+ibeacon_tilt_format = Struct(
     "type_length" / Const(b"\x02\x15"),
     "uuid" / Array(16, Byte),
     "major" / Int16ub,
     "minor" / Int16ub,
+    "power" / Int8sl,
+)
+
+ibeacon_gravmon_format = Struct(
+    "type_length" / Const(b"\x03\x15"),
+    "uuid" / Const(b'GRAVMON.'), #Array(8, Byte),
+    "chipid" / Int32ub,
+    "angle" / Int16ub,
+    "battery" / Int16ub,
+    "gravity" / Int16ub,
+    "temp" / Int16ub,
     "power" / Int8sl,
 )
 
@@ -73,10 +84,10 @@ async def parse_gravitymon(device: BLEDevice):
         logger.error( "Failed to connect, Error: %s", e)                
         pass
 
-def parse_tilt(device: BLEDevice, advertisement_data: AdvertisementData):
+def parse_ibeacon_tilt(device: BLEDevice, advertisement_data: AdvertisementData):
     try:      
         apple_data = advertisement_data.manufacturer_data[0x004C]
-        ibeacon = ibeacon_format.parse(apple_data)
+        ibeacon = ibeacon_tilt_format.parse(apple_data)
         uuid = UUID(bytes=bytes(ibeacon.uuid))
         tilt = first(x for x in tilts if x.uuid == uuid)
         if tilt is not None:
@@ -112,6 +123,36 @@ def parse_eddystone(device: BLEDevice, advertisement_data: AdvertisementData):
     except ConstError as e:
         pass
 
+def parse_ibeacon_gravitymon(device: BLEDevice, advertisement_data: AdvertisementData):
+    try:      
+        apple_data = advertisement_data.manufacturer_data[0x004C]
+        ibeacon = ibeacon_gravmon_format.parse(apple_data)
+        data = {
+            "battery": ibeacon.battery/1000,
+            "gravity": ibeacon.gravity/10000,
+            "temperature": ibeacon.temp/1000, 
+            "angle": ibeacon.angle/100,
+            "chipid": hex(ibeacon.chipid)[2:],
+        }
+        logger.info( "Data received: %s %s", json.dumps(data), device.address )
+
+        #uuid = UUID(bytes=bytes(ibeacon.uuid))
+        #tilt = first(x for x in tilts if x.uuid == uuid)
+        #if tilt is not None:
+        #    tempF = ibeacon.major
+        #    gravitySG = ibeacon.minor/1000
+        #    data = {
+        #        "color": tilt.color,
+        #        "gravity": gravitySG,
+        #        "temperature": tempF,
+        #        "RSSI": advertisement_data.rssi,
+        #    }
+        #    logger.info( "Data received: %s %s", json.dumps(data), device.address )
+    except KeyError as e:
+        pass
+    except ConstError as e:
+        pass
+
 async def main():
     logging.basicConfig(
         level=logging.INFO,
@@ -131,6 +172,7 @@ async def main():
             elif d.name == "gravitymon":
                 await parse_gravitymon(d)
             else:
-                parse_tilt(d,a)
+                parse_ibeacon_tilt(d,a)
+                parse_ibeacon_gravitymon(d,a)
 
 asyncio.run(main())
