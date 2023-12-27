@@ -77,24 +77,40 @@ void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
     } else {
       Log.notice(
           F("BLE : Processing gravitymon device (connect with device)" CR));
-      bleScanner.processGravitymonBeacon(advertisedDevice->getAddress());
+      bleScanner.processGravitymonDevice(advertisedDevice->getAddress());
     }
 
     return;
   }
 
-  // Check if we have a tilt beacon to process
+  // Check if we have a tilt iBeacon to process
 
   if (advertisedDevice->getManufacturerData().length() >= 24) {
     if (advertisedDevice->getManufacturerData()[0] == 0x4c &&
         advertisedDevice->getManufacturerData()[1] == 0x00 &&
         advertisedDevice->getManufacturerData()[2] == 0x02 &&
         advertisedDevice->getManufacturerData()[3] == 0x15) {
-      Log.notice(F("BLE : Advertised iBeacon Device: %s" CR),
+      Log.notice(F("BLE : Advertised iBeacon TILT Device: %s" CR),
                  advertisedDevice->getAddress().toString().c_str());
 
       bleScanner.proccesTiltBeacon(advertisedDevice->getManufacturerData(),
                                    advertisedDevice->getRSSI());
+    }
+  }
+
+  // Check if we have a gravmon iBeacon to process
+
+  if (advertisedDevice->getManufacturerData().length() >= 24) {
+    if (advertisedDevice->getManufacturerData()[0] == 0x4c &&
+        advertisedDevice->getManufacturerData()[1] == 0x00 &&
+        advertisedDevice->getManufacturerData()[2] == 0x03 &&
+        advertisedDevice->getManufacturerData()[3] == 0x15) {
+      Log.notice(F("BLE : Advertised iBeacon GRAVMON Device: %s" CR),
+                 advertisedDevice->getAddress().toString().c_str());
+
+      bleScanner.proccesGravitymonBeacon(
+          advertisedDevice->getManufacturerData(),
+          advertisedDevice->getAddress());
     }
   }
 }
@@ -102,6 +118,61 @@ void BleDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
 void BleClientCallbacks::onConnect(NimBLEClient* client) {
   Log.notice(F("BLE : Client connected"));
   // client->updateConnParams(120,120,0,60);
+}
+
+void BleScanner::proccesGravitymonBeacon(const std::string& advertStringHex,
+                                         NimBLEAddress address) {
+  /* Dump payload into hex string
+  const char *p = advertStringHex.c_str();
+  for(int i = 0; i < advertStringHex.length(); i++ ) {
+    Serial.printf("%X%X ", (*(p+i)&0xf0)>>4, (*(p+i)&0x0f));
+  }
+  Serial.println();*/
+
+  const char* payload = advertStringHex.c_str();
+
+  float battery;
+  float temp;
+  float gravity;
+  float angle;
+  uint32_t chipId;
+
+  chipId = (*(payload + 12) << 24) | (*(payload + 13) << 16) |
+           (*(payload + 14) << 8) | *(payload + 15);
+  angle = static_cast<float>((*(payload + 16) << 8) | *(payload + 17)) / 100;
+  battery = static_cast<float>((*(payload + 18) << 8) | *(payload + 19)) / 1000;
+  gravity =
+      static_cast<float>((*(payload + 20) << 8) | *(payload + 21)) / 10000;
+  temp = static_cast<float>((*(payload + 22) << 8) | *(payload + 23)) / 1000;
+
+  char chip[20];
+  snprintf(&chip[0], sizeof(chip), "%6x", chipId);
+
+  DynamicJsonDocument out(500);
+  out["name"] = "";
+  out["ID"] = &chip[0];
+  out["token"] = "";
+  out["interval"] = 0;
+  out["temperature"] = serialized(String(temp, 2));
+  out["temp_units"] = "C";
+  out["gravity"] = serialized(String(gravity, 4));
+  out["angle"] = serialized(String(angle, 2));
+  out["battery"] = serialized(String(battery, 2));
+  out["RSSI"] = 0;
+
+  String str;
+  str.reserve(500);
+  serializeJson(out, str);
+  out.clear();
+
+  if (_gravitymonCount < NO_GRAVITYMON) {
+    _gravitymon[_gravitymonCount].address = address;
+    _gravitymon[_gravitymonCount].data = str;
+    _gravitymon[_gravitymonCount].doConnect = false;
+    _gravitymonCount++;
+  } else {
+    Log.notice(F("BLE : Max devices reached - no more devices available." CR));
+  }
 }
 
 void BleScanner::processGravitymonEddystoneBeacon(NimBLEAddress address,
@@ -209,7 +280,7 @@ void BleScanner::processGravitymonExtBeacon(NimBLEAddress address,
   }
 }
 
-void BleScanner::processGravitymonBeacon(NimBLEAddress address) {
+void BleScanner::processGravitymonDevice(NimBLEAddress address) {
   Log.notice(F("BLE : Advertised gravitymon device: %s" CR),
              address.toString().c_str());
 

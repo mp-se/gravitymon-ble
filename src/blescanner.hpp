@@ -90,8 +90,10 @@ class BleScanner {
 
   TiltColor proccesTiltBeacon(const std::string &advertStringHex,
                               const int8_t &currentRSSI);
+  void proccesGravitymonBeacon(const std::string &advertStringHex,
+                               NimBLEAddress address);
 
-  void processGravitymonBeacon(NimBLEAddress address);
+  void processGravitymonDevice(NimBLEAddress address);
   void processGravitymonEddystoneBeacon(NimBLEAddress address,
                                         const uint8_t *payload);
   void processGravitymonExtBeacon(NimBLEAddress address,
