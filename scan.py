@@ -135,19 +135,6 @@ def parse_ibeacon_gravitymon(device: BLEDevice, advertisement_data: Advertisemen
             "chipid": hex(ibeacon.chipid)[2:],
         }
         logger.info( "Data received: %s %s", json.dumps(data), device.address )
-
-        #uuid = UUID(bytes=bytes(ibeacon.uuid))
-        #tilt = first(x for x in tilts if x.uuid == uuid)
-        #if tilt is not None:
-        #    tempF = ibeacon.major
-        #    gravitySG = ibeacon.minor/1000
-        #    data = {
-        #        "color": tilt.color,
-        #        "gravity": gravitySG,
-        #        "temperature": tempF,
-        #        "RSSI": advertisement_data.rssi,
-        #    }
-        #    logger.info( "Data received: %s %s", json.dumps(data), device.address )
     except KeyError as e:
         pass
     except ConstError as e:
