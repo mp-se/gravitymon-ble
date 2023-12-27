@@ -59,25 +59,25 @@ int loopCounter = 0;
 
 void loop() {
 #if defined(SERVER_TILT)
-  Log.info(F("Tilt beacon started" CR));
+  Log.info(F("Tilt iBeacon started" CR));
   String color("pink");
   myBleSender->sendTiltData(color, 41.234, 1.23456, false);
 #endif
 
 #if defined(SERVER_TILT_PRO)
-  Log.info(F("Tilt PRO beacon started" CR));
+  Log.info(F("Tilt PRO iBeacon started" CR));
   String color("green");
   myBleSender->sendTiltData(color, 41.234, 1.23456, true);
+#endif
+
+#if defined(SERVER_CUSTOM)
+  Log.info(F("Custom iBbeacon started" CR));
+  myBleSender->sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
 #endif
 
 #if defined(SERVER_EDDY)
   Log.info(F("EddyStone beacon started" CR));
   myBleSender->sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
-#endif
-
-#if defined(SERVER_CUSTOM)
-  Log.info(F("Custom beacon started" CR));
-  myBleSender->sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
 #endif
 
 #if defined(SERVER_GRAVITYMON)

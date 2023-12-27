@@ -20,7 +20,7 @@ ibeacon_tilt_format = Struct(
 
 ibeacon_gravmon_format = Struct(
     "type_length" / Const(b"\x03\x15"),
-    "uuid" / Const(b'GRAVMON.'), #Array(8, Byte),
+    "uuid" / Const(b'GRAVMON.'), # Array(8, Byte),
     "chipid" / Int32ub,
     "angle" / Int16ub,
     "battery" / Int16ub,
