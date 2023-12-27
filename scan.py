@@ -90,6 +90,7 @@ def parse_ibeacon_tilt(device: BLEDevice, advertisement_data: AdvertisementData)
         ibeacon = ibeacon_tilt_format.parse(apple_data)
         uuid = UUID(bytes=bytes(ibeacon.uuid))
         tilt = first(x for x in tilts if x.uuid == uuid)
+        
         if tilt is not None:
             tempF = ibeacon.major
             gravitySG = ibeacon.minor/1000
@@ -127,6 +128,7 @@ def parse_ibeacon_gravitymon(device: BLEDevice, advertisement_data: Advertisemen
     try:      
         apple_data = advertisement_data.manufacturer_data[0x004C]
         ibeacon = ibeacon_gravmon_format.parse(apple_data)
+
         data = {
             "battery": ibeacon.battery/1000,
             "gravity": ibeacon.gravity/10000,

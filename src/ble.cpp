@@ -251,7 +251,7 @@ void BleSender::sendCustomBeaconData(float battery, float tempC, float gravity,
   }
 
 #if defined(CONFIG_BT_NIMBLE_EXT_ADV)
-#error "Not yet implemented"
+  #warning "Not yet implemented"
 #else
   std::string mf = "";
 
