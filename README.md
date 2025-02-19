@@ -2,50 +2,37 @@
 
 With this alternative option one can send up to 512 bytes of data which is would fit most of the data in the iSpindle dataformat. The format will be customizable in the editor.
 
-The gravitymon BLE sender will support 3 modes:
+The gravitymon BLE sender will support 4 modes:
 
 * Tilt (iBeacon broadcast with Gravity + Temperature)
 * Tilt PRO (iBeacon broadcast with Gravity + Temperature, higher accuracy)
-* Gravitymon (Service Characteristics with up to 512 bytes of data), requires a client to connect to the device to read data.
-* Gravitymon Extended Advertisement (BLE5 Advertisement with up to 252 bytes of data), requires an active client to detect the data.
+* Gravitymon (iBeacon broadcast), works on all boards with bluetooth.
+* Gravitymon EddyStoneTLM (BLE 5.x), require an C3 or S3 chip to work.
 
 ### The following table shows the client options for receiving the data. 
 
-| Option | Passive Scan | Active Scan | Connect | ESP32 | Win/Python |
-| :------ | :------: | :------: | :------: | :------: | :------: |
-| iBeacon/Tilt | Yes | Yes | No | Yes | Yes |
-| iBeacon/Tilt Pro | Yes | Yes | No | Yes | Yes |
-| iBeacon/Gravmon | Yes | Yes | No | Yes | Yes |
-| GravityMon - Service/Characteritics | Yes | Yes | Yes | Yes | Yes |
-| GravityMon - Ext Advertisement | No | Yes | No | Yes | No |
-| GravityMon - EddyStoneTLM | No | Yes | No | Yes | Yes |
+| Option | Passive Scan | Active Scan | ESP32 | Win/Python |
+| :------ | :------: | :------: | :------: | :------: |
+| iBeacon/Tilt | Yes | Yes | Yes | Yes |
+| iBeacon/Tilt Pro | Yes | Yes | Yes | Yes |
+| iBeacon/Gravmon | Yes | Yes | Yes | Yes |
+| GravityMon - Ext Advertisement | No | Yes | Yes | No |
+| GravityMon - EddyStoneTLM | No | Yes | Yes | Yes |
 
 ### The following table shows the data coverage. 
 
-| Option | Gravity | Temp | Angle | Battery | Interval | Name | Token | ChipID | RSSI |
-| :------ | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: |    
-| iBeacon/Tilt | Yes | Yes | - | - | - | - | - | - | - |
-| iBeacon/Tilt Pro | Yes | Yes | - | - | - | - | - | - | - |
-| iBeacon/GravityMon | Yes | Yes | Yes | Yes | - | - | - | Yes | - |
-| GravityMon - Service/Characteritics | Yes| Yes | Yes | Yes | Yes | Yes | Yes | Yes | - |
-| GravityMon - Ext Advertisement | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | - |
-| GravityMon - EddyStoneTLM | Yes | Yes | Yes | Yes | - | - | - | Yes | - |
-
-## How the GRAVITYMON Service/Charateristc mode is implemented
-
-This option is under battery testing to see what benefits this will bring.
-
-1) Gravitymon will send out the BLE advertisement for up to 5 seconds (can be detected with both passive and active scanning)
-2) A client will connect to the device and read the characteristic which will be a json string (format will be configurable), we are limited to 512 bytes of data.
-3) Once the reading has been done or the timeout expires the gravitymon device will go into sleep mode.
-
-Its expected to double the battery life for the device compared to sending the same data over wifi. More tests on coverage and distance is needed before this is implemented. 
+| Option | Gravity | Temp | Angle | Battery | ChipID | 
+| :------ | :------: | :------: | :------: | :------: | :------: |     
+| iBeacon/Tilt | Yes | Yes | - | - | - | 
+| iBeacon/Tilt Pro | Yes | Yes | - | - | - | - | - | - | 
+| iBeacon/GravityMon | Yes | Yes | Yes | Yes | Yes | 
+| GravityMon - EddyStoneTLM | Yes | Yes | Yes | Yes | Yes | 
 
 ## How the GRAVITYMON extended advertisement mode is implemented
 
 This option will send the data as part of an extended advertisement, this allows for up to 252 bytes of data.
 
-Works with the esp32 client in this project but not with a Windows computer nor an iPhone. 
+Works with the esp32 client in this project but not with a Windows computer nor an iPhone.
 
 # Targets in this project
 
@@ -57,8 +44,6 @@ This project contains the following targets
 * server-gravitymon-ext-c3: Gravitymon BLE format for esp32 c3 board (with EXT advertising enabled)
 * server-adv-c3: Gravitymon BLE extended advertiserment for esp32 c3 board (with EXT advertising enabled)
 * client-s3: Client that can connect and read both TILT beacon and Gravitymon advertisement 
-
-Gravitymon BLE format requires that the client connects on the server to read the data via a characteristics attribute (can be up to 512 chars). Works with client in PASSIVE or ACTIVE mode.
 
 Gravitymon BLE ext advertising format requires that the is in ACTIVE mode. Here the payload is part of the advertisement (can be up to 252 chars)
 

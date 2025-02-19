@@ -23,16 +23,28 @@ SOFTWARE.
  */
 #include <Arduino.h>
 
-#include <ble.hpp>
-#include <blescanner.hpp>
+#include <ble_gateway.hpp>
+#include <ble_gravitymon.hpp>
+#include <ble_pressuremon.hpp>
+#include <log.hpp>
+#include <utils.hpp>
 
-BleSender* myBleSender = nullptr;
+// #define CLIENT_GRAVITYMON_TILT
+// #define CLIENT_GRAVITYMON_TILTPRO
+// #define CLIENT_GRAVITYMON_IBEACON
+// #define CLIENT_GRAVITYMON_EDDYSTONE
+#define CLIENT_PRESSUREMON_IBEACON
+#define CLIENT_PRESSUREMON_EDDYSTONE
+
+#if defined(PRESSUREMON) || defined(GRAVITYMON)
+BleSender myBleSender;
+#endif
+
 char chip[20];
 
-void setup() {
-  Serial.begin(115200);
-  Log.begin(LOG_LEVEL_NOTICE, &Serial, true);
+SerialDebug mySerial;
 
+void setup() {
   uint32_t chipId = 0;
   for (int i = 0; i < 17; i = i + 8) {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
@@ -40,110 +52,96 @@ void setup() {
   snprintf(&chip[0], sizeof(chip), "%6x", chipId);
   Log.notice(F("Main: Started setup for %s." CR), &chip[0]);
 
-#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) ||             \
-    defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT) || \
-    defined(SERVER_EDDY) || defined(SERVER_CUSTOM)
-  Log.info(F("Running in BROADCAST mode!" CR));
-  myBleSender = new BleSender();
-  myBleSender->init();
+#if defined(PRESSUREMON) || defined(GRAVITYMON)
+  Log.info(F("Running in broadcast mode (server)!" CR));
+  myBleSender.init();
 #endif
 
-#if defined(CLIENT)
+#if defined(GATEWAY)
+  Log.info(F("Running in listening mode (client)!" CR));
   bleScanner.init();
+  bleScanner.setScanTime(5);
+  bleScanner.setAllowActiveScan(true);
 #endif
 
   Log.info(F("Setup completed!" CR));
 }
 
-int loopCounter = 0;
-
 void loop() {
-#if defined(SERVER_TILT)
-  Log.info(F("Tilt iBeacon started" CR));
-  String color("pink");
-  myBleSender->sendTiltData(color, 41.234, 1.23456, false);
+  String color;
+
+#if defined(CLIENT_GRAVITYMON_TILT) && defined(GRAVITYMON)
+  Log.info(F("Gravitymon TILT server started" CR));
+  color = "pink";
+  myBleSender.sendTiltData(color, 41.234, 1.23456, false);
+  delay(2000);
 #endif
 
-#if defined(SERVER_TILT_PRO)
-  Log.info(F("Tilt PRO iBeacon started" CR));
-  String color("green");
-  myBleSender->sendTiltData(color, 41.234, 1.23456, true);
+#if defined(CLIENT_GRAVITYMON_TILTPRO) && defined(GRAVITYMON)
+  Log.info(F("Gravitymon TILT PRO server started" CR));
+  color = "green";
+  myBleSender.sendTiltData(color, 31.234, 1.12345, true);
+  delay(2000);
 #endif
 
-#if defined(SERVER_CUSTOM)
-  Log.info(F("Custom iBbeacon started" CR));
-  myBleSender->sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
+#if defined(CLIENT_GRAVITYMON_IBEACON) && defined(GRAVITYMON)
+  Log.info(F("Gravitymon iBbeacon server started" CR));
+  myBleSender.sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
+  delay(2000);
 #endif
 
-#if defined(SERVER_EDDY)
-  Log.info(F("EddyStone beacon started" CR));
-  myBleSender->sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
+#if defined(CLIENT_GRAVITYMON_EDDYSTONE) && defined(GRAVITYMON)
+  Log.info(F("Gravitymon EddyStone server started" CR));
+  myBleSender.sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
+  delay(2000);
 #endif
 
-#if defined(SERVER_GRAVITYMON)
-  Log.info(F("Gravitymon beacon started" CR));
-  String param(loopCounter);
-  String json("{\"name\":\"my_device_name\",\"ID\": \"" + String(chip) +
-              "\",\"token\":\"my_token\",\"interval\":" + String(loopCounter) +
-              ",\"temperature\":20.2,\"temp_units\":\"C\",\"gravity\":1.05,"
-              "\"angle\":34.45,\"battery\":3.85,\"RSSI\":0}");
-  myBleSender->sendGravitymonData(json);
-
-  int counter = 0;
-
-  while (counter < 100) {  // 10 seconds
-    delay(100);
-    Serial.printf(".");
-
-    if (myBleSender->isGravitymonDataSent()) {
-      Log.info(F(CR "BLE beacon has been read" CR));
-      break;
-    }
-    counter++;
-  }
-
-  myBleSender->stopAdvertising();
+#if defined(CLIENT_PRESSUREMON_IBEACON) && defined(PRESSUREMON)
+  Log.info(F("Pressuremon iBbeacon server started" CR));
+  myBleSender.sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
+  delay(2000);
 #endif
 
-#if defined(SERVER_GRAVITYMON_EXT)
-  Log.info(F("Gravitymon extended beacon started" CR));
-  String param(loopCounter);
-  String json(
-      "{\"n\":\"my_device_name\",\"I\":\"" + String(chip) +
-      "\",\"to\":\"my_token\",\"i\":" + String(loopCounter) +
-      ",\"t\":20.2,\"u\":\"C\",\"g\":1.05,\"a\":34.45,\"b\":3.85,\"R\":0}");
-  myBleSender->sendGravitymonDataExtended(json);
-
-  Log.info(F("Length of payload %d" CR), json.length());
-
-  int counter = 0;
-
-  while (counter < 100) {  // 10 seconds
-    delay(100);
-    Serial.printf(".");
-
-    if (myBleSender->isGravitymonDataSent()) {
-      Log.info(F(CR "BLE beacon has been read" CR));
-      break;
-    }
-    counter++;
-  }
-
-  myBleSender->stopAdvertising();
+#if defined(CLIENT_PRESSUREMON_EDDYSTONE) && defined(PRESSUREMON)
+  Log.info(F("Pressuremon EddyStone server started" CR));
+  myBleSender.sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
+  delay(2000);
 #endif
 
-#if defined(SERVER_TILT) || defined(SERVER_TILT_PRO) ||             \
-    defined(SERVER_GRAVITYMON) || defined(SERVER_GRAVITYMON_EXT) || \
-    defined(SERVER_EDDY) || defined(SERVER_CUSTOM)
-  delay(10000);
-#endif
-
-#if defined(CLIENT)
+#if defined(GATEWAY)
   bleScanner.scan();
-  bleScanner.waitForScan();
-#endif
+  // bleScanner.waitForScan();
 
-  loopCounter++;
+  // Process Gravitymon TILT BLE
+  for (int i = 0; i < NO_TILT_COLORS; i++) {
+    TiltData td = bleScanner.getTiltData((TiltColor)i);
+
+    Log.notice(F("Main: Type=%s, Gravity=%F, Temp=%F." CR),
+               bleScanner.getTiltColorAsString((TiltColor)i), td.gravity,
+               convertFtoC(td.tempF));
+  }
+
+  // Process Gravitymon BLE
+  for (int i = 0; i < NO_GRAVITYMON; i++) {
+    GravitymonData& gmd = bleScanner.getGravitymonData(i);
+    Log.notice(F("Main: Type=%s, Angle=%F Gravity=%F, Temp=%F, Battery=%F, "
+                 "Id=%s." CR),
+               gmd.type.c_str(), gmd.angle, gmd.gravity, gmd.tempC, gmd.battery,
+               gmd.id.c_str());
+  }
+
+  // Process Pressuremon BLE
+  for (int i = 0; i < NO_PRESSUREMON; i++) {
+    PressuremonData& pmd = bleScanner.getPressuremonData(i);
+    Log.notice(F("Main: Type=%s, Pressure=%F Pressure1=%F, Temp=%F, Battery=%F, "
+                 "Id=%s." CR),
+                 pmd.type.c_str(), pmd.pressure, pmd.pressure1, pmd.tempC, pmd.battery,
+                 pmd.id.c_str());
+  }
+
+  // TODO: Add parsing and handling
+
+#endif
 }
 
 // EOF
