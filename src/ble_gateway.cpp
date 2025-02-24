@@ -48,8 +48,8 @@ constexpr auto CHAR_UUID = "2AC4";
 void BleDeviceCallbacks::onResult(
     const NimBLEAdvertisedDevice *advertisedDevice) {
   Log.notice(F("BLE : %s,%s" CR),
-            advertisedDevice->getAddress().toString().c_str(),
-            advertisedDevice->getName().c_str());
+             advertisedDevice->getAddress().toString().c_str(),
+             advertisedDevice->getName().c_str());
 
   if (advertisedDevice->getName() == "gravitymon") {
     bool eddyStone = false;
@@ -99,8 +99,9 @@ void BleDeviceCallbacks::onResult(
         advertisedDevice->getManufacturerData()[1] == 0x00 &&
         advertisedDevice->getManufacturerData()[2] == 0x03 &&
         advertisedDevice->getManufacturerData()[3] == 0x15) {
-      Log.notice(F("BLE : Advertised iBeacon GRAVMON/PRESMON Device: %s" CR),
-                 advertisedDevice->getAddress().toString().c_str());
+      Log.notice(
+          F("BLE : Advertised iBeacon GRAVMON/PRESMON/CHAMBER Device: %s" CR),
+          advertisedDevice->getAddress().toString().c_str());
 
       bleScanner.proccesGravitymonBeacon(
           advertisedDevice->getManufacturerData(),
@@ -108,6 +109,8 @@ void BleDeviceCallbacks::onResult(
       bleScanner.proccesPressuremonBeacon(
           advertisedDevice->getManufacturerData(),
           advertisedDevice->getAddress());
+      bleScanner.proccesChamberBeacon(advertisedDevice->getManufacturerData(),
+                                      advertisedDevice->getAddress());
     }
   }
 
@@ -318,6 +321,40 @@ void BleScanner::processPressuremonEddystoneBeacon(
   } else {
     Log.error(F("BLE : Max devices reached - no more devices available." CR));
   }
+}
+
+void BleScanner::proccesChamberBeacon(const std::string &advertStringHex,
+                                      NimBLEAddress address) {
+  const char *payload = advertStringHex.c_str();
+
+  float chamberTempC;
+  float beerTempC;
+  uint32_t chipId;
+
+  chipId = (*(payload + 12) << 24) | (*(payload + 13) << 16) |
+           (*(payload + 14) << 8) | *(payload + 15);
+  chamberTempC =
+      static_cast<float>((*(payload + 16) << 8) | *(payload + 17)) / 1000;
+  beerTempC =
+      static_cast<float>((*(payload + 18) << 8) | *(payload + 19)) / 1000;
+
+  char chip[20];
+  snprintf(&chip[0], sizeof(chip), "%6x", chipId);
+
+  /*int idx = findGravitymonId(chip);
+  if (idx >= 0) {
+  GravitymonData &data = getGravitymonData(idx);
+  data.tempC = temp;
+  data.gravity = gravity;
+  data.angle = angle;
+  data.battery = battery;
+  data.id = chip;
+  data.address = address;
+  data.type = "Beacon";
+  data.setUpdated();
+  } else {
+  Log.error(F("BLE : Max devices reached - no more devices available." CR));
+  }*/
 }
 
 BleScanner::BleScanner() {

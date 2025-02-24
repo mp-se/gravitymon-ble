@@ -201,6 +201,9 @@ class BleScanner {
   void processPressuremonEddystoneBeacon(NimBLEAddress address,
                                          const std::vector<uint8_t> &payload);
 
+  void proccesChamberBeacon(const std::string &advertStringHex,
+                            NimBLEAddress address);
+
   TiltData &getTiltData(TiltColor col) { return _tilt[col]; }
 
   int findGravitymonId(String id) {

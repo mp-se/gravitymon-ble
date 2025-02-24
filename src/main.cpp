@@ -23,6 +23,7 @@ SOFTWARE.
  */
 #include <Arduino.h>
 
+#include <ble_chamber.hpp>
 #include <ble_gateway.hpp>
 #include <ble_gravitymon.hpp>
 #include <ble_pressuremon.hpp>
@@ -33,10 +34,12 @@ SOFTWARE.
 // #define CLIENT_GRAVITYMON_TILTPRO
 // #define CLIENT_GRAVITYMON_IBEACON
 // #define CLIENT_GRAVITYMON_EDDYSTONE
-#define CLIENT_PRESSUREMON_IBEACON
-#define CLIENT_PRESSUREMON_EDDYSTONE
+// #define CLIENT_PRESSUREMON_IBEACON
+// #define CLIENT_PRESSUREMON_EDDYSTONE
 
-#if defined(PRESSUREMON) || defined(GRAVITYMON)
+#define CLIENT_CHAMBER_IBEACON
+
+#if defined(PRESSUREMON) || defined(GRAVITYMON) || defined(CHAMBER)
 BleSender myBleSender;
 #endif
 
@@ -108,6 +111,12 @@ void loop() {
   delay(2000);
 #endif
 
+#if defined(CLIENT_CHAMBER_IBEACON) && defined(CHAMBER)
+  Log.info(F("Chamber iBbeacon server started" CR));
+  myBleSender.sendCustomBeaconData(22.345, 24.765);
+  delay(2000);
+#endif
+
 #if defined(GATEWAY)
   bleScanner.scan();
   // bleScanner.waitForScan();
@@ -133,10 +142,11 @@ void loop() {
   // Process Pressuremon BLE
   for (int i = 0; i < NO_PRESSUREMON; i++) {
     PressuremonData& pmd = bleScanner.getPressuremonData(i);
-    Log.notice(F("Main: Type=%s, Pressure=%F Pressure1=%F, Temp=%F, Battery=%F, "
-                 "Id=%s." CR),
-                 pmd.type.c_str(), pmd.pressure, pmd.pressure1, pmd.tempC, pmd.battery,
-                 pmd.id.c_str());
+    Log.notice(
+        F("Main: Type=%s, Pressure=%F Pressure1=%F, Temp=%F, Battery=%F, "
+          "Id=%s." CR),
+        pmd.type.c_str(), pmd.pressure, pmd.pressure1, pmd.tempC, pmd.battery,
+        pmd.id.c_str());
   }
 
   // TODO: Add parsing and handling
