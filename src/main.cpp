@@ -27,8 +27,12 @@ SOFTWARE.
 #include <ble_gateway.hpp>
 #include <ble_gravitymon.hpp>
 #include <ble_pressuremon.hpp>
+#include <cstdio>
 #include <log.hpp>
 #include <utils.hpp>
+
+#if defined(PRESSUREMON) || defined(GRAVITYMON) || defined(CHAMBER)
+BleSender myBleSender;
 
 // #define CLIENT_GRAVITYMON_TILT
 // #define CLIENT_GRAVITYMON_TILTPRO
@@ -36,11 +40,8 @@ SOFTWARE.
 // #define CLIENT_GRAVITYMON_EDDYSTONE
 // #define CLIENT_PRESSUREMON_IBEACON
 // #define CLIENT_PRESSUREMON_EDDYSTONE
-
 #define CLIENT_CHAMBER_IBEACON
 
-#if defined(PRESSUREMON) || defined(GRAVITYMON) || defined(CHAMBER)
-BleSender myBleSender;
 #endif
 
 char chip[20];
@@ -55,7 +56,7 @@ void setup() {
   snprintf(&chip[0], sizeof(chip), "%6x", chipId);
   Log.notice(F("Main: Started setup for %s." CR), &chip[0]);
 
-#if defined(PRESSUREMON) || defined(GRAVITYMON)
+#if defined(PRESSUREMON) || defined(GRAVITYMON) || defined(CHAMBER) 
   Log.info(F("Running in broadcast mode (server)!" CR));
   myBleSender.init();
 #endif
@@ -118,38 +119,55 @@ void loop() {
 #endif
 
 #if defined(GATEWAY)
+  Log.notice(F("Main: Starting BLE scan." CR));
   bleScanner.scan();
   // bleScanner.waitForScan();
+
+  Log.notice(F("Main: Checking result." CR));
 
   // Process Gravitymon TILT BLE
   for (int i = 0; i < NO_TILT_COLORS; i++) {
     TiltData td = bleScanner.getTiltData((TiltColor)i);
 
-    Log.notice(F("Main: Type=%s, Gravity=%F, Temp=%F." CR),
-               bleScanner.getTiltColorAsString((TiltColor)i), td.gravity,
-               convertFtoC(td.tempF));
+    if (td.updated) {
+      Log.notice(F("Main: Type=%s, Gravity=%F, Temp=%F." CR),
+                 bleScanner.getTiltColorAsString((TiltColor)i), td.gravity,
+                 convertFtoC(td.tempF));
+    }
   }
 
   // Process Gravitymon BLE
   for (int i = 0; i < NO_GRAVITYMON; i++) {
     GravitymonData& gmd = bleScanner.getGravitymonData(i);
-    Log.notice(F("Main: Type=%s, Angle=%F Gravity=%F, Temp=%F, Battery=%F, "
-                 "Id=%s." CR),
-               gmd.type.c_str(), gmd.angle, gmd.gravity, gmd.tempC, gmd.battery,
-               gmd.id.c_str());
+    if (gmd.updated) {
+      Log.notice(F("Main: Type=%s, Angle=%F Gravity=%F, Temp=%F, Battery=%F, "
+                   "Id=%s." CR),
+                 gmd.type.c_str(), gmd.angle, gmd.gravity, gmd.tempC,
+                 gmd.battery, gmd.id.c_str());
+    }
   }
 
   // Process Pressuremon BLE
   for (int i = 0; i < NO_PRESSUREMON; i++) {
     PressuremonData& pmd = bleScanner.getPressuremonData(i);
-    Log.notice(
-        F("Main: Type=%s, Pressure=%F Pressure1=%F, Temp=%F, Battery=%F, "
-          "Id=%s." CR),
-        pmd.type.c_str(), pmd.pressure, pmd.pressure1, pmd.tempC, pmd.battery,
-        pmd.id.c_str());
+    if (pmd.updated) {
+      Log.notice(
+          F("Main: Type=%s, Pressure=%F Pressure1=%F, Temp=%F, Battery=%F, "
+            "Id=%s." CR),
+          pmd.type.c_str(), pmd.pressure, pmd.pressure1, pmd.tempC, pmd.battery,
+          pmd.id.c_str());
+    }
   }
 
-  // TODO: Add parsing and handling
+  // Process Chamber BLE
+  for (int i = 0; i < NO_CHAMBER; i++) {
+    ChamberData& cmd = bleScanner.getChamberData(i);
+    if (cmd.updated) {
+      Log.notice(F("Main: Type=%s, Chamber=%F Beer=%F Id=%s." CR),
+                 cmd.type.c_str(), cmd.chamberTempC, cmd.beerTempC,
+                 cmd.id.c_str());
+    }
+  }
 
 #endif
 }

@@ -37,7 +37,7 @@ SOFTWARE.
 void BleSender::init() {
   if (_initFlag) return;
 
-  BLEDevice::init("chamberctrl");
+  BLEDevice::init("chamber");
   _advertising = BLEDevice::getAdvertising();
 
   esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
@@ -74,11 +74,11 @@ void BleSender::sendCustomBeaconData(float chamberTempC, float beerTempC) {
   mf += static_cast<char>((c >> 8));  // Chamber Temp
   mf += static_cast<char>((c & 0xFF));
   mf += static_cast<char>((b >> 8));  // Beer Temp
-  mf += static_cast<char>(0);
-  mf += static_cast<char>(0);
-  mf += static_cast<char>(0);
-  mf += static_cast<char>(0);
-  mf += static_cast<char>(0);
+  mf += static_cast<char>((b & 0xFF));  
+  mf += static_cast<char>(0x00);
+  mf += static_cast<char>(0x00);
+  mf += static_cast<char>(0x00);
+  mf += static_cast<char>(0x00);
   mf += static_cast<char>(0x00);  // Signal
 
 #if LOG_LEVEL == 6
