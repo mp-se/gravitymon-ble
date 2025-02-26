@@ -89,10 +89,10 @@ void BleDeviceCallbacks::onResult(
       Log.notice(F("BLE : Processing pressuremon eddy stone beacon" CR));
       bleScanner.processPressuremonEddystoneBeacon(
           advertisedDevice->getAddress(), advertisedDevice->getPayload());
-    }*/
+    }
 
     return;
-  }
+  }*/
 
   // Check if we have a gravmon iBeacon to process
 

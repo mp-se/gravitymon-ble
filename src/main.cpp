@@ -34,8 +34,8 @@ SOFTWARE.
 #if defined(PRESSUREMON)
 BleSender myBleSender;
 
-// #define CLIENT_PRESSUREMON_IBEACON
-#define CLIENT_PRESSUREMON_EDDYSTONE
+#define CLIENT_PRESSUREMON_IBEACON
+// #define CLIENT_PRESSUREMON_EDDYSTONE
 
 #elif defined(GRAVITYMON)
 BleSender myBleSender;
@@ -113,11 +113,11 @@ void loop() {
   delay(2000);
 #endif
 
-#if defined(CLIENT_PRESSUREMON_EDDYSTONE) && defined(PRESSUREMON)
-  Log.info(F("Pressuremon EddyStone server started" CR));
-  myBleSender.sendEddystoneData(3.34567, 42.12345, 12.3467, 49.654);
-  delay(2000);
-#endif
+// #if defined(CLIENT_PRESSUREMON_EDDYSTONE) && defined(PRESSUREMON)
+//   Log.info(F("Pressuremon EddyStone server started" CR));
+//   myBleSender.sendEddystoneData(3.34567, 42.12345, 12.3467, 49.654);
+//   delay(2000);
+// #endif
 
 #if defined(CLIENT_CHAMBER_IBEACON) && defined(CHAMBER)
   Log.info(F("Chamber iBbeacon server started" CR));
