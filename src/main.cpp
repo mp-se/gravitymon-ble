@@ -31,17 +31,24 @@ SOFTWARE.
 #include <log.hpp>
 #include <utils.hpp>
 
-#if defined(PRESSUREMON) || defined(GRAVITYMON) || defined(CHAMBER)
+#if defined(PRESSUREMON)
+BleSender myBleSender;
+
+// #define CLIENT_PRESSUREMON_IBEACON
+#define CLIENT_PRESSUREMON_EDDYSTONE
+
+#elif defined(GRAVITYMON)
 BleSender myBleSender;
 
 // #define CLIENT_GRAVITYMON_TILT
 // #define CLIENT_GRAVITYMON_TILTPRO
-// #define CLIENT_GRAVITYMON_IBEACON
+#define CLIENT_GRAVITYMON_IBEACON
 // #define CLIENT_GRAVITYMON_EDDYSTONE
-// #define CLIENT_PRESSUREMON_IBEACON
-// #define CLIENT_PRESSUREMON_EDDYSTONE
-#define CLIENT_CHAMBER_IBEACON
 
+#elif defined(CHAMBER)
+BleSender myBleSender;
+
+#define CLIENT_CHAMBER_IBEACON
 #endif
 
 char chip[20];
@@ -102,13 +109,13 @@ void loop() {
 
 #if defined(CLIENT_PRESSUREMON_IBEACON) && defined(PRESSUREMON)
   Log.info(F("Pressuremon iBbeacon server started" CR));
-  myBleSender.sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
+  myBleSender.sendCustomBeaconData(3.34567, 42.12345, 1.234567, 49.76543);
   delay(2000);
 #endif
 
 #if defined(CLIENT_PRESSUREMON_EDDYSTONE) && defined(PRESSUREMON)
   Log.info(F("Pressuremon EddyStone server started" CR));
-  myBleSender.sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
+  myBleSender.sendEddystoneData(3.34567, 42.12345, 12.3467, 49.654);
   delay(2000);
 #endif
 

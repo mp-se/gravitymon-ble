@@ -62,14 +62,14 @@ pressuremon_ibeacon_format = Struct(
     "temp" / Int16ub,
 )
 
-pressuremon_eddystone_format = Struct(
-    "type_length" / Const(b"\x20\x00"),
-    "battery" / Int16ub,
-    "temp" / Int16ub,
-    "pressure" / Int16ub,
-    "pressure1" / Int16ub,
-    "chipid" / Int32ub,
-)
+# pressuremon_eddystone_format = Struct(
+#     "type_length" / Const(b"\x20\x00"),
+#     "battery" / Int16ub,
+#     "temp" / Int16ub,
+#     "pressure" / Int16ub,
+#     "pressure1" / Int16ub,
+#     "chipid" / Int32ub,
+# )
 
 
 class tilt:
@@ -268,8 +268,8 @@ async def parse_pressuremon(device: BLEDevice, advertisement_data: Advertisement
             "token": "",
             "interval": 0,
             "battery": ibeacon.battery / 1000,
-            "pressure": ibeacon.pressure / 10000,
-            "pressure1": ibeacon.pressure1 / 10000,
+            "pressure": ibeacon.pressure / 100,
+            "pressure1": ibeacon.pressure1 / 100,
             "temperature": ibeacon.temp / 1000,
             "pressure-unit": "PSI",
             "temperature-unit": "C",
@@ -301,53 +301,53 @@ async def parse_pressuremon(device: BLEDevice, advertisement_data: Advertisement
         pass
 
 
-def parse_pressuremon_eddystone(device: BLEDevice, advertisement_data: AdvertisementData):
-    global pressuremons
+# def parse_pressuremon_eddystone(device: BLEDevice, advertisement_data: AdvertisementData):
+#     global pressuremons
 
-    try:
-        uuid = advertisement_data.service_uuids[0]
-        data = advertisement_data.service_data.get(uuid)
-        eddy = pressuremon_eddystone_format.parse(data)
+#     try:
+#         uuid = advertisement_data.service_uuids[0]
+#         data = advertisement_data.service_data.get(uuid)
+#         eddy = pressuremon_eddystone_format.parse(data)
 
-        logger.info(f"Parsing pressuremon eddystone: {device}")
+#         logger.info(f"Parsing pressuremon eddystone: {device}")
 
-        data = {
-            "name": "",
-            "ID": hex(eddy.chipid)[2:],
-            "token": "",
-            "interval": 0,
-            "battery": eddy.battery / 1000,
-            "pressure": eddy.pressure / 10000,
-            "pressure1": eddy.pressure1 / 10000,
-            "temperature": eddy.temp / 1000,
-            "pressure-unit": "PSI",
-            "temperature-unit": "C",
-            "RSSI": 0,
-        }
-        logger.info(f"Pressuremmon data received: {json.dumps(data)} {device.address}")
+#         data = {
+#             "name": "",
+#             "ID": hex(eddy.chipid)[2:],
+#             "token": "",
+#             "interval": 0,
+#             "battery": eddy.battery / 1000,
+#             "pressure": eddy.pressure / 100,
+#             "pressure1": eddy.pressure1 / 100,
+#             "temperature": eddy.temp / 1000,
+#             "pressure-unit": "PSI",
+#             "temperature-unit": "C",
+#             "RSSI": 0,
+#         }
+#         logger.info(f"Pressuremmon data received: {json.dumps(data)} {device.address}")
 
-        now = time.time()
-        logger.debug(
-            f"Found pressuremon device, checking if time has expired, min={minium_interval}s"
-        )
+#         now = time.time()
+#         logger.debug(
+#             f"Found pressuremon device, checking if time has expired, min={minium_interval}s"
+#         )
 
-        if (
-            abs(pressuremons.get(data["ID"], now - minium_interval * 2) - now)
-            > minium_interval
-        ):
-            pressuremons[data["ID"]] = now
-            logger.info(f"Pressuremon data received: {json.dumps(data)}")
-            if not skip_push:
-                try:
-                    logger.info("Posting pressuremon data.")
-                    r = requests.post(endpoint_pressure, json=data, headers=headers)
-                    logger.info(f"Response {r}.")
-                except Exception as e:
-                    logger.error(f"Failed to post pressuremon data, Error: {e}")
-    except KeyError:
-        pass
-    except ConstError:
-        pass
+#         if (
+#             abs(pressuremons.get(data["ID"], now - minium_interval * 2) - now)
+#             > minium_interval
+#         ):
+#             pressuremons[data["ID"]] = now
+#             logger.info(f"Pressuremon data received: {json.dumps(data)}")
+#             if not skip_push:
+#                 try:
+#                     logger.info("Posting pressuremon data.")
+#                     r = requests.post(endpoint_pressure, json=data, headers=headers)
+#                     logger.info(f"Response {r}.")
+#                 except Exception as e:
+#                     logger.error(f"Failed to post pressuremon data, Error: {e}")
+#     except KeyError:
+#         pass
+#     except ConstError:
+#         pass
 
 
 def parse_gravitymon_tilt(advertisement_data: AdvertisementData):
@@ -401,10 +401,10 @@ async def device_found(device: BLEDevice, advertisement_data: AdvertisementData)
         "0000feaa-" in s for s in advertisement_data.service_uuids
     ):
         parse_gravitymon_eddystone(device=device, advertisement_data=advertisement_data)
-    elif device.name == "pressuremon" and any(
-        "0000feaa-" in s for s in advertisement_data.service_uuids
-    ):
-        parse_pressuremon_eddystone(device=device, advertisement_data=advertisement_data)
+    # elif device.name == "pressuremon" and any(
+    #     "0000feaa-" in s for s in advertisement_data.service_uuids
+    # ):
+    #     parse_pressuremon_eddystone(device=device, advertisement_data=advertisement_data)
     else:
         # Try the other formats and see what matches
         await parse_gravitymon(device=device, advertisement_data=advertisement_data)

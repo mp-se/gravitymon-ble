@@ -72,7 +72,7 @@ void BleDeviceCallbacks::onResult(
     }
 
     return;
-  } else if (advertisedDevice->getName() == "pressuremon") {
+  } /*else if (advertisedDevice->getName() == "pressuremon") {
     bool eddyStone = false;
 
     // Print out the advertised services
@@ -89,7 +89,7 @@ void BleDeviceCallbacks::onResult(
       Log.notice(F("BLE : Processing pressuremon eddy stone beacon" CR));
       bleScanner.processPressuremonEddystoneBeacon(
           advertisedDevice->getAddress(), advertisedDevice->getPayload());
-    }
+    }*/
 
     return;
   }
@@ -242,7 +242,7 @@ void BleScanner::proccesPressuremonBeacon(const std::string &advertStringHex,
     pressure =
         static_cast<float>((*(payload + 16) << 8) | *(payload + 17)) / 100;
     pressure1 =
-        static_cast<float>((*(payload + 18) << 8) | *(payload + 19)) / 10000;
+        static_cast<float>((*(payload + 18) << 8) | *(payload + 19)) / 100;
     battery =
         static_cast<float>((*(payload + 20) << 8) | *(payload + 21)) / 1000;
     temp = static_cast<float>((*(payload + 22) << 8) | *(payload + 23)) / 1000;
@@ -285,7 +285,7 @@ void BleScanner::processPressuremonEddystoneBeacon(
 
   battery = static_cast<float>((payload[25] << 8) | payload[26]) / 1000;
   temp = static_cast<float>((payload[27] << 8) | payload[28]) / 1000;
-  pressure = static_cast<float>((payload[29] << 8) | payload[30]) / 10000;
+  pressure = static_cast<float>((payload[29] << 8) | payload[30]) / 100;
   pressure1 = static_cast<float>((payload[31] << 8) | payload[32]) / 100;
   chipId = (payload[33] << 24) | (payload[34] << 16) | (payload[35] << 8) |
            (payload[36]);
@@ -297,10 +297,10 @@ void BleScanner::processPressuremonEddystoneBeacon(
   if (idx >= 0) {
     PressuremonData &data = getPressuremonData(idx);
     Log.info(F("BLE : Update pressuremon %s, %d." CR), chip, idx);
-    data.tempC = temp / 1000;
-    data.pressure = pressure / 10000;
-    data.pressure1 = pressure1 / 10000;
-    data.battery = battery / 1000;
+    data.tempC = temp;
+    data.pressure = pressure;
+    data.pressure1 = pressure1;
+    data.battery = battery;
     data.id = chip;
 
     data.address = address;
