@@ -71,6 +71,14 @@ pressuremon_ibeacon_format = Struct(
 #     "chipid" / Int32ub,
 # )
 
+chamber_ibeacon_format = Struct(
+    "type_length" / Const(b"\x03\x15"),
+    "name" / Const(b"CHAMBER."),
+    # "name" / Array(8, Byte),
+    "chipid" / Int32ub,
+    "chamberTemp" / Int16ub,
+    "beerTemp" / Int16ub,
+)
 
 class tilt:
     def __init__(self, color, uuid, time):
@@ -300,6 +308,24 @@ async def parse_pressuremon(device: BLEDevice, advertisement_data: Advertisement
     except ConstError:
         pass
 
+async def parse_chamber(device: BLEDevice, advertisement_data: AdvertisementData):
+    try:
+        apple_data = advertisement_data.manufacturer_data[0x004C]
+        ibeacon = chamber_ibeacon_format.parse(apple_data)
+
+        logger.info(f"Parsing chamber ibeacon: {device}")
+
+        data = {
+            "ID": hex(ibeacon.chipid)[2:],
+            "chamber-temp": ibeacon.chamberTemp / 1000,
+            "beer-temp": ibeacon.beerTemp / 1000,
+            "temperature-unit": "C",
+        }
+        logger.info(f"Chamber data received: {json.dumps(data)} {device.address}")
+    except KeyError:
+        pass
+    except ConstError:
+        pass
 
 # def parse_pressuremon_eddystone(device: BLEDevice, advertisement_data: AdvertisementData):
 #     global pressuremons
@@ -409,6 +435,7 @@ async def device_found(device: BLEDevice, advertisement_data: AdvertisementData)
         # Try the other formats and see what matches
         await parse_gravitymon(device=device, advertisement_data=advertisement_data)
         await parse_pressuremon(device=device, advertisement_data=advertisement_data)
+        await parse_chamber(device=device, advertisement_data=advertisement_data)
         parse_gravitymon_tilt(advertisement_data=advertisement_data)
 
 
