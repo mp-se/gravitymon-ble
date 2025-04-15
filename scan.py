@@ -283,6 +283,12 @@ async def parse_pressuremon(device: BLEDevice, advertisement_data: Advertisement
             "temperature-unit": "C",
             "RSSI": 0,
         }
+
+        if(ibeacon.pressure == 0xffff):
+            data["pressure"] = 0
+        if(ibeacon.pressure1 == 0xffff):
+            data["pressure1"] = 0
+
         logger.info(f"Pressuremon data received: {json.dumps(data)} {device.address}")
 
         now = time.time()
