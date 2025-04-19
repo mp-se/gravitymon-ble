@@ -30,6 +30,7 @@ SOFTWARE.
 #include <cstdio>
 #include <log.hpp>
 #include <utils.hpp>
+#include <measurement.hpp>
 
 #if defined(PRESSUREMON)
 BleSender myBleSender;
@@ -49,6 +50,9 @@ BleSender myBleSender;
 BleSender myBleSender;
 
 #define CLIENT_CHAMBER_IBEACON
+
+#elif defined(GATEWAY)
+MeasurementList myMeasurementList;
 #endif
 
 char chip[20];
@@ -132,50 +136,56 @@ void loop() {
 
   Log.notice(F("Main: Checking result." CR));
 
-  // Process Gravitymon TILT BLE
-  for (int i = 0; i < NO_TILT_COLORS; i++) {
-    TiltData td = bleScanner.getTiltData((TiltColor)i);
+  for (int i = 0; i < myMeasurementList.size(); i++) {
+    MeasurementEntry* entry = myMeasurementList.getMeasurementEntry(i);
 
-    if (td.updated) {
-      Log.notice(F("Main: Type=%s, Gravity=%F, Temp=%F." CR),
-                 bleScanner.getTiltColorAsString((TiltColor)i), td.gravity,
-                 convertFtoC(td.tempF));
-    }
-  }
+    switch (entry->getType()) {
+      case MeasurementType::Gravitymon: {
+        Log.notice("Loop: Processing Gravitymon data %d." CR, i);
 
-  // Process Gravitymon BLE
-  for (int i = 0; i < NO_GRAVITYMON; i++) {
-    GravitymonData& gmd = bleScanner.getGravitymonData(i);
-    if (gmd.updated) {
-      Log.notice(F("Main: Type=%s, Angle=%F Gravity=%F, Temp=%F, Battery=%F, "
-                   "Id=%s." CR),
-                 gmd.type.c_str(), gmd.angle, gmd.gravity, gmd.tempC,
-                 gmd.battery, gmd.id.c_str());
-    }
-  }
-
-  // Process Pressuremon BLE
-  for (int i = 0; i < NO_PRESSUREMON; i++) {
-    PressuremonData& pmd = bleScanner.getPressuremonData(i);
-    if (pmd.updated) {
-      Log.notice(
-          F("Main: Type=%s, Pressure=%F Pressure1=%F, Temp=%F, Battery=%F, "
+        if (entry->isUpdated()) {
+          const GravityData* gd = entry->getGravityData();
+          Log.notice(F("Main: Type=%s, Angle=%F Gravity=%F, Temp=%F, Battery=%F, "
             "Id=%s." CR),
-          pmd.type.c_str(), pmd.pressure, pmd.pressure1, pmd.tempC, pmd.battery,
-          pmd.id.c_str());
+          gd->getTypeAsString(), gd->getAngle(), gd->getGravity(), gd->getTempC(), gd->getBattery(), gd->getId());
+        }
+      } break;
+
+      case MeasurementType::Pressuremon: {
+        Log.notice("Loop: Processing Pressuremon data %d." CR, i);
+
+        if (entry->isUpdated()) {
+          const PressureData* pd = entry->getPressureData();
+
+          Log.notice(
+            F("Main: Type=%s, Pressure=%F Pressure1=%F, Temp=%F, Battery=%F, "
+              "Id=%s." CR),
+            pd->getTypeAsString(), pd->getPressure(), pd->getPressure1(), pd->getTempC(), pd->getBattery(), pd->getId());
+        }
+      } break;
+
+      case MeasurementType::Tilt:
+      case MeasurementType::TiltPro: {
+        Log.notice("Loop: Processing Tilt data %d." CR, i);
+
+        if (entry->isUpdated()) {
+          const TiltData* pd = entry->getTiltData();
+          Log.notice(F("Main: Type=%s, Gravity=%F, Temp=%F." CR),
+          pd->getTypeAsString(), pd->getGravity(), pd->getTempC());
+        }
+      } break;
+
+      case MeasurementType::Chamber: {
+        Log.notice("Loop: Processing Chamber data %d." CR, i);
+
+        if (entry->isUpdated()) {
+          const ChamberData* cd = entry->getChamberData();
+          Log.notice(F("Main: Type=%s, Chamber=%F Beer=%F Id=%s." CR),
+          cd->getTypeAsString(), cd->getChamberTempC(), cd->getBeerTempC(), cd->getId());
+          }
+      } break;
     }
   }
-
-  // Process Chamber BLE
-  for (int i = 0; i < NO_CHAMBER; i++) {
-    ChamberData& cmd = bleScanner.getChamberData(i);
-    if (cmd.updated) {
-      Log.notice(F("Main: Type=%s, Chamber=%F Beer=%F Id=%s." CR),
-                 cmd.type.c_str(), cmd.chamberTempC, cmd.beerTempC,
-                 cmd.id.c_str());
-    }
-  }
-
 #endif
 }
 
