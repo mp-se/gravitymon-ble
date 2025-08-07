@@ -43,8 +43,10 @@ BleSender myBleSender;
 
 // #define CLIENT_GRAVITYMON_TILT
 // #define CLIENT_GRAVITYMON_TILTPRO
-#define CLIENT_GRAVITYMON_IBEACON
+// #define CLIENT_GRAVITYMON_IBEACON
 // #define CLIENT_GRAVITYMON_EDDYSTONE
+// #define CLIENT_RAPT_V1
+#define CLIENT_RAPT_V2
 
 #elif defined(CHAMBER)
 BleSender myBleSender;
@@ -108,6 +110,18 @@ void loop() {
 #if defined(CLIENT_GRAVITYMON_EDDYSTONE) && defined(GRAVITYMON)
   Log.info(F("Gravitymon EddyStone server started" CR));
   myBleSender.sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
+  delay(2000);
+#endif
+
+#if defined(CLIENT_RAPT_V1) && defined(GRAVITYMON)
+  Log.info(F("Gravitymon RAPT v1 server started" CR));
+  myBleSender.sendRaptV1Data(3.34567, 42.12345, 1.234567, 20.25);
+  delay(2000);
+#endif
+
+#if defined(CLIENT_RAPT_V2) && defined(GRAVITYMON)
+  Log.info(F("Gravitymon RAPT v2 server started" CR));
+  myBleSender.sendRaptV2Data(3.34567, 42.12345, 1.234567, 20.25, 5.6789, true);
   delay(2000);
 #endif
 

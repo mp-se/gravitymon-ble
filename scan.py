@@ -6,7 +6,7 @@ import time
 import os
 from uuid import UUID
 
-from construct import Array, Byte, Const, Int8sl, Int16ub, Int32ub, Struct
+from construct import Array, Byte, Const, Int8sl, Int16ub, Int32ub, Float32b, Struct
 from construct.core import ConstError
 
 from bleak import BleakScanner, BleakClient
@@ -78,6 +78,29 @@ chamber_ibeacon_format = Struct(
     "chipid" / Int32ub,
     "chamberTemp" / Int16ub,
     "beerTemp" / Int16ub,
+)
+
+rapt_v1_ibeacon_format = Struct(
+    "tag" / Const(b"PT\x01"),
+    "mac" / Array(6, Byte),
+    "temp" / Int16ub,
+    "gravity" / Float32b,    # float
+    "x" / Int16ub,
+    "y" / Int16ub,
+    "z" / Int16ub,
+    "battery" / Int16ub
+)
+
+rapt_v2_ibeacon_format = Struct(
+    "tag" / Const(b"PT\x02"),
+    "velocity_valid" / Byte,
+    "velocity" / Float32b,
+    "temp" / Int16ub,
+    "gravity" / Float32b,
+    "x" / Int16ub,
+    "y" / Int16ub,
+    "z" / Int16ub,
+    "battery" / Int16ub
 )
 
 class tilt:
@@ -425,6 +448,50 @@ def parse_gravitymon_tilt(advertisement_data: AdvertisementData):
     except ConstError:
         pass
 
+def parse_rapt_v1(device: BLEDevice, advertisement_data: AdvertisementData):
+    try:
+        apple_data = advertisement_data.manufacturer_data[0x4152]
+        ibeacon = rapt_v1_ibeacon_format.parse(apple_data)
+
+        data = {
+            "temperature": ibeacon.temp / 128 - 273.15,
+            "gravity": ibeacon.gravity / 1000,
+            "mac": ":".join(f"{b:02x}" for b in ibeacon.mac),
+            "x": ibeacon.x / 16,
+            "y": ibeacon.y / 16,
+            "z": ibeacon.z / 16,
+            "battery": ibeacon.battery / 256,
+            "rssi": advertisement_data.rssi,
+        }
+        logger.info(f"Tilt data received: {json.dumps(data)}")
+
+    except KeyError:
+        pass
+    except ConstError:
+        pass
+
+def parse_rapt_v2(device: BLEDevice, advertisement_data: AdvertisementData):
+    try:
+        apple_data = advertisement_data.manufacturer_data[0x4152]
+        ibeacon = rapt_v2_ibeacon_format.parse(apple_data)
+
+        data = {
+            "temperature": ibeacon.temp / 128 - 273.15,
+            "velocity_valid": ibeacon.velocity_valid == 1,
+            "velocity": ibeacon.velocity,
+            "gravity": ibeacon.gravity / 1000,
+            "x": ibeacon.x / 16,
+            "y": ibeacon.y / 16,
+            "z": ibeacon.z / 16,
+            "battery": ibeacon.battery / 256,
+            "rssi": advertisement_data.rssi,
+        }
+        logger.info(f"Tilt data received: {json.dumps(data)}")
+
+    except KeyError:
+        pass
+    except ConstError:
+        pass
 
 async def device_found(device: BLEDevice, advertisement_data: AdvertisementData):
     # logger.info(f"Found: {device.name} {advertisement_data.service_uuids}")
@@ -439,10 +506,12 @@ async def device_found(device: BLEDevice, advertisement_data: AdvertisementData)
     #     parse_pressuremon_eddystone(device=device, advertisement_data=advertisement_data)
     else:
         # Try the other formats and see what matches
-        await parse_gravitymon(device=device, advertisement_data=advertisement_data)
-        await parse_pressuremon(device=device, advertisement_data=advertisement_data)
-        await parse_chamber(device=device, advertisement_data=advertisement_data)
-        parse_gravitymon_tilt(advertisement_data=advertisement_data)
+        # await parse_gravitymon(device=device, advertisement_data=advertisement_data)
+        # await parse_pressuremon(device=device, advertisement_data=advertisement_data)
+        # await parse_chamber(device=device, advertisement_data=advertisement_data)
+        # parse_gravitymon_tilt(advertisement_data=advertisement_data)
+        parse_rapt_v1(device=device, advertisement_data=advertisement_data)
+        parse_rapt_v2(device=device, advertisement_data=advertisement_data)
 
 
 async def main():
