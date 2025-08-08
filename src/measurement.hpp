@@ -27,10 +27,19 @@ SOFTWARE.
 #if defined(GATEWAY)
 
 #include <Arduino.h>
+#include <FS.h>
 
+#include <cstdio>
 #include <deque>
 #include <memory>
+#include <sdcard_mmc.hpp>
+#include <sdcard_sd.hpp>
+#include <utility>
 #include <utils.hpp>
+
+#if defined(ENABLE_MMC) || defined(ENABLE_SD)
+extern Storage mySdStorage;
+#endif
 
 enum MeasurementType {
   NoType = 0,
@@ -53,15 +62,29 @@ class MeasurementBaseData {
  private:
   MeasurementType _type = MeasurementType::NoType;
   MeasurementSource _source = MeasurementSource::NoSource;
-  String _id = "";
+  String _id;
+  String _created;
 
  public:
   MeasurementBaseData(String id, MeasurementType type, MeasurementSource src) {
     _id = id;
     _type = type;
     _source = src;
+
+    struct tm time;
+    getLocalTime(&time);
+
+    char buf[40];
+    snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+             time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour,
+             time.tm_min, time.tm_sec);
+    _created = String(buf);
   }
   virtual ~MeasurementBaseData() {}
+
+  virtual void writeToFile(File& file) const {}
+
+  const char* getCreatedAsString() const { return _created.c_str(); }
 
   MeasurementType getType() const { return _type; }
   const char* getTypeAsString() const {
@@ -118,7 +141,7 @@ class TiltData : public MeasurementBaseData {
   int _rssi = 0;
   TiltColor _tiltColor;
 
-  String colorToString(TiltColor color) const {
+  const char* colorToString(TiltColor color) const {
     switch (color) {
       case TiltColor::Red:
         return "Red";
@@ -162,6 +185,35 @@ class TiltData : public MeasurementBaseData {
   int getTxPower() const { return _txPower; }
   int getRssi() const { return _rssi; }
   TiltColor getTiltColor() const { return _tiltColor; }
+
+  void writeToFile(File& file) const {
+    char buffer[100];
+
+    // Data parameters
+    // ----------------------------------------
+    // 0, Format Version (1)
+    // 1, Type
+    // 2, Source
+    // 3, Created (timestamp)
+    // 4, ID
+    // 5, Color
+    // 6, Temperature (C)
+    // 7, Gravity (SG)
+    // 8, Tx Power
+    // 9, Rssi
+    // 10,
+    // 11,
+    // 12,
+    // 13,
+
+    snprintf(buffer, sizeof(buffer),
+             "1,%s,%s,%s,%s,%s,"
+             "%.2f,%.4f,%d,%d,,,,",
+             getTypeAsString(), getSourceAsString(), getCreatedAsString(),
+             getId(), colorToString(_tiltColor), getTempC(), getGravity(),
+             getTxPower(), getRssi());
+    file.println(buffer);
+  }
 };
 
 class GravityData : public MeasurementBaseData {
@@ -202,6 +254,35 @@ class GravityData : public MeasurementBaseData {
   int getTxPower() const { return _txPower; }
   int getRssi() const { return _rssi; }
   int getInterval() const { return _interval; }
+
+  void writeToFile(File& file) const {
+    char buffer[100];
+
+    // Data parameters
+    // ----------------------------------------
+    // 0, Format Version (1)
+    // 1, Type
+    // 2, Source
+    // 3, Created (timestamp)
+    // 4, ID
+    // 5, Name
+    // 6, Token
+    // 7, Temperature (C)
+    // 8, Gravity (SG)
+    // 9, Angle
+    // 10, Battery
+    // 11, Tx Power
+    // 12, Rssi
+    // 13, Interval
+
+    snprintf(buffer, sizeof(buffer),
+             "1,%s,%s,%s,%s,%s,%s,"
+             "%.2f,%.4f,%.4f,%.2f,%d,%d,%d",
+             getTypeAsString(), getSourceAsString(), getCreatedAsString(),
+             getId(), getName(), getToken(), getTempC(), getGravity(),
+             getAngle(), getBattery(), getTxPower(), getRssi(), getInterval());
+    file.println(buffer);
+  }
 };
 
 class PressureData : public MeasurementBaseData {
@@ -242,6 +323,36 @@ class PressureData : public MeasurementBaseData {
   int getTxPower() const { return _txPower; }
   int getRssi() const { return _rssi; }
   int getInterval() const { return _interval; }
+
+  void writeToFile(File& file) const {
+    char buffer[100];
+
+    // Data parameters
+    // ----------------------------------------
+    // 0, Format Version (1)
+    // 1, Type
+    // 2, Source
+    // 3, Created (timestamp)
+    // 4, ID
+    // 5, Name
+    // 6, Token
+    // 7, Temperature (C)
+    // 8, Pressure (PSI)
+    // 9, Pressure1 (PSI)
+    // 10, Battery
+    // 11, Tx Power
+    // 12, Rssi
+    // 13, Interval
+
+    snprintf(buffer, sizeof(buffer),
+             "1,%s,%s,%s,%s,%s,%s,"
+             "%.2f,%.4f,%.4f,%.2f,%d,%d,%d",
+             getTypeAsString(), getSourceAsString(), getCreatedAsString(),
+             getId(), getName(), getToken(), getTempC(), getPressure(),
+             getPressure1(), getBattery(), getTxPower(), getRssi(),
+             getInterval());
+    file.println(buffer);
+  }
 };
 
 class ChamberData : public MeasurementBaseData {
@@ -263,6 +374,34 @@ class ChamberData : public MeasurementBaseData {
   float getChamberTempC() const { return _chamberTempC; }
   float getBeerTempC() const { return _beerTempC; }
   int getRssi() const { return _rssi; }
+
+  void writeToFile(File& file) const {
+    char buffer[100];
+
+    // Data parameters
+    // ----------------------------------------
+    // 0, Format Version (1)
+    // 1, Type
+    // 2, Source
+    // 3, Created (timestamp)
+    // 4, ID
+    // 5, ChamberTemp (C)
+    // 6, BeerTemp (C)
+    // 7, Rssi
+    // 8,
+    // 9,
+    // 10,
+    // 11,
+    // 12,
+    // 13,
+
+    snprintf(buffer, sizeof(buffer),
+             "1,%s,%s,%s,%s,"
+             "%.2f,%.2f,%d,,,,,,",
+             getTypeAsString(), getSourceAsString(), getCreatedAsString(),
+             getId(), getChamberTempC(), getBeerTempC(), getRssi());
+    file.println(buffer);
+  }
 };
 
 // Base class for measurement data keeping track of last updated and pushed
@@ -276,7 +415,7 @@ class MeasurementEntry {
   String _id = "";
 
  public:
-  MeasurementEntry(String id) { _id = id; }
+  explicit MeasurementEntry(String id) { _id = id; }
   ~MeasurementEntry() {}
 
   const MeasurementBaseData* getData() const { return _measurement.get(); }
@@ -319,7 +458,7 @@ class MeasurementEntry {
 
   uint32_t getUpdateAge() const { return (millis() - _timeUpdated) / 1000; }
   uint32_t getPushAge() const { return (millis() - _timePushed) / 1000; }
-  struct tm getTimeinfoUpdated() const { return _timeinfoUpdated; }
+  const struct tm* getTimeinfoUpdated() const { return &_timeinfoUpdated; }
 };
 
 // List of data measurements
@@ -342,6 +481,18 @@ class MeasurementList {
       _list.pop_front();
 
     int i = findMeasurementById(data->getId());
+
+#if defined(ENABLE_MMC) || defined(ENABLE_SD)
+    if (mySdStorage.hasCard()) {
+      File file = mySdStorage.open("/data.csv", FILE_APPEND, true);
+      if (file) {
+        data->writeToFile(file);
+        file.close();
+      } else {
+        Log.error(F("SD  : Failed to open data.csv for writing." CR));
+      }
+    }
+#endif
 
     if (i == -1) {
       // Serial.printf("Creating new measurement entry %s\n",
