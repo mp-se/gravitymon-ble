@@ -120,7 +120,7 @@ void BleDeviceCallbacks::onResult(
 
   // Check if we have a rapt v1/v2 iBeacon to process
 
-  if (advertisedDevice->getManufacturerData().length() >= 10) {
+  if (advertisedDevice->getManufacturerData().length() >= 24) {
     if (advertisedDevice->getManufacturerData()[0] == 0x52 &&
         advertisedDevice->getManufacturerData()[1] == 0x41 &&
         advertisedDevice->getManufacturerData()[2] == 0x50 &&
