@@ -45,8 +45,8 @@ BleSender myBleSender;
 // #define CLIENT_GRAVITYMON_TILTPRO
 // #define CLIENT_GRAVITYMON_IBEACON
 // #define CLIENT_GRAVITYMON_EDDYSTONE
-// #define CLIENT_RAPT_V1
-#define CLIENT_RAPT_V2
+#define CLIENT_RAPT_V1
+// #define CLIENT_RAPT_V2
 
 #elif defined(CHAMBER)
 BleSender myBleSender;
@@ -59,7 +59,7 @@ MeasurementList myMeasurementList;
 
 char chip[20];
 
-SerialDebug mySerial;
+SerialDebug mySerial(57600L);
 
 void setup() {
   uint32_t chipId = 0;
@@ -146,7 +146,7 @@ void loop() {
 #if defined(GATEWAY)
   Log.notice(F("Main: Starting BLE scan." CR));
   bleScanner.scan();
-  // bleScanner.waitForScan();
+  delay(5000);
 
   Log.notice(F("Main: Checking result." CR));
 
@@ -196,6 +196,16 @@ void loop() {
           const ChamberData* cd = entry->getChamberData();
           Log.notice(F("Main: Type=%s, Chamber=%F Beer=%F Id=%s." CR),
           cd->getTypeAsString(), cd->getChamberTempC(), cd->getBeerTempC(), cd->getId());
+          }
+      } break;
+
+      case MeasurementType::Rapt: {
+        Log.notice("Loop: Processing Rapt data %d." CR, i);
+
+        if (entry->isUpdated()) {
+          const RaptData* rd = entry->getRaptData();
+          Log.notice(F("Main: Type=%s, Gravity=%F Velocity=%F Temp=%F Id=%s." CR),
+          rd->getTypeAsString(), rd->getGravity(), rd->getVelocity(), rd->getTempC(), rd->getId());
           }
       } break;
     }
