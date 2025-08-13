@@ -47,11 +47,11 @@ constexpr auto SERV2_UUID = "1801";
 constexpr auto CHAR_UUID = "2AC4";
 
 void BleDeviceCallbacks::onResult(
-    const NimBLEAdvertisedDevice *advertisedDevice) {
-  Log.notice(F("BLE : %s,%s %d" CR),
-             advertisedDevice->getAddress().toString().c_str(),
-             advertisedDevice->getName().c_str(),
-              advertisedDevice->getManufacturerData().length());
+  const NimBLEAdvertisedDevice *advertisedDevice) {
+  // Log.notice(F("BLE : %s,%s %d" CR),
+  //            advertisedDevice->getAddress().toString().c_str(),
+  //            advertisedDevice->getName().c_str(),
+  //             advertisedDevice->getManufacturerData().length());
 
   if (advertisedDevice->getName() == "gravitymon") {
     bool eddyStone = false;
@@ -544,7 +544,7 @@ void BleScanner::proccesRaptBeacon(const std::string &advertStringHex,
     floatUnion.b[1] = *(payload + 14);
     floatUnion.b[2] = *(payload + 13);
     floatUnion.b[3] = *(payload + 12);
-    gravity = floatUnion.f;
+    gravity = floatUnion.f / 1000;
 
     angleX = static_cast<float>((*(payload + 16) << 8) | *(payload + 17)) / 16;
     angleY = static_cast<float>((*(payload + 18) << 8) | *(payload + 19)) / 16;

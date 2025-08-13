@@ -2,7 +2,7 @@
 
 With this alternative option one can send up to 512 bytes of data which is would fit most of the data in the iSpindle dataformat. The format will be customizable in the editor.
 
-The gravitymon BLE sender will support 4 modes:
+The Gravitymon BLE sender will support 4 modes:
 
 * Tilt (iBeacon broadcast with Gravity + Temperature)
 * Tilt PRO (iBeacon broadcast with Gravity + Temperature, higher accuracy)
@@ -16,8 +16,9 @@ The gravitymon BLE sender will support 4 modes:
 | iBeacon/Tilt | Yes | Yes | Yes | Yes |
 | iBeacon/Tilt Pro | Yes | Yes | Yes | Yes |
 | iBeacon/Gravmon | Yes | Yes | Yes | Yes |
-| GravityMon - Ext Advertisement | No | Yes | Yes | No |
-| GravityMon - EddyStoneTLM | No | Yes | Yes | Yes |
+| Gravitymon - Ext Advertisement | No | Yes | Yes | No |
+| Gravitymon - EddyStoneTLM | No | Yes | Yes | Yes |
+| Gravitymon - RAPT | Yes | Yes | Yes | Yes |
 
 ### The following table shows the data coverage. 
 
@@ -25,8 +26,9 @@ The gravitymon BLE sender will support 4 modes:
 | :------ | :------: | :------: | :------: | :------: | :------: |     
 | iBeacon/Tilt | Yes | Yes | - | - | - | 
 | iBeacon/Tilt Pro | Yes | Yes | - | - | - | - | - | - | 
-| iBeacon/GravityMon | Yes | Yes | Yes | Yes | Yes | 
-| GravityMon - EddyStoneTLM | Yes | Yes | Yes | Yes | Yes | 
+| iBeacon/Gravitymon | Yes | Yes | Yes | Yes | Yes | 
+| Gravitymon - EddyStoneTLM | Yes | Yes | Yes | Yes | Yes | 
+| Gravitymon - RAPT | Yes | Yes | Yes | Yes | - | 
 
 ## How the GRAVITYMON extended advertisement mode is implemented
 
@@ -38,11 +40,9 @@ Works with the esp32 client in this project but not with a Windows computer nor 
 
 This project contains the following targets
 
-* server-tilt-c3 : Standard TILT beacon for esp32 c3 board
-* server-tilt-ext-c3 : Standard TILT beacon for esp32 c3 board (with EXT advertising enabled)
-* server-gravitymon-c3: Gravitymon BLE format for esp32 c3 board
-* server-gravitymon-ext-c3: Gravitymon BLE format for esp32 c3 board (with EXT advertising enabled)
-* server-adv-c3: Gravitymon BLE extended advertiserment for esp32 c3 board (with EXT advertising enabled)
+* server-gravitymon-s3: Gravitymon BLE format for esp32 board
+* server-pressuremon-s3: Gravitymon BLE format for esp32 board (with EXT advertising enabled)
+* server-chamber-s3: Gravitymon BLE format for esp32 board (with EXT advertising enabled)
 * client-s3: Client that can connect and read both TILT beacon and Gravitymon advertisement 
 
 Gravitymon BLE ext advertising format requires that the is in ACTIVE mode. Here the payload is part of the advertisement (can be up to 252 chars)
