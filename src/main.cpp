@@ -24,6 +24,7 @@ SOFTWARE.
 #include <Arduino.h>
 
 #include <ble_chamber.hpp>
+#include <ble_chamber_scanner.hpp>
 #include <ble_gateway.hpp>
 #include <ble_gravitymon.hpp>
 #include <ble_pressuremon.hpp>
@@ -45,11 +46,12 @@ BleSender myBleSender;
 // #define CLIENT_GRAVITYMON_TILTPRO
 // #define CLIENT_GRAVITYMON_IBEACON
 // #define CLIENT_GRAVITYMON_EDDYSTONE
-#define CLIENT_RAPT_V1
-// #define CLIENT_RAPT_V2
+// #define CLIENT_RAPT_V1
+#define CLIENT_RAPT_V2
 
 #elif defined(CHAMBER)
 BleSender myBleSender;
+MeasurementList myMeasurementList;
 
 #define CLIENT_CHAMBER_IBEACON
 
@@ -74,7 +76,7 @@ void setup() {
   myBleSender.init();
 #endif
 
-#if defined(GATEWAY)
+#if defined(GATEWAY) || defined(CHAMBER) 
   Log.info(F("Running in listening mode (client)!" CR));
   bleScanner.init();
   bleScanner.setScanTime(5);
@@ -143,7 +145,7 @@ void loop() {
   delay(2000);
 #endif
 
-#if defined(GATEWAY)
+#if defined(GATEWAY) || defined(CHAMBER)
   Log.notice(F("Main: Starting BLE scan." CR));
   bleScanner.scan();
   delay(5000);

@@ -24,7 +24,7 @@ SOFTWARE.
 #ifndef SRC_MEASUREMENT_HPP_
 #define SRC_MEASUREMENT_HPP_
 
-#if defined(GATEWAY)
+#if defined(GATEWAY) || defined(CHAMBER)
 
 #include <Arduino.h>
 #include <FS.h>
@@ -600,6 +600,6 @@ class MeasurementList {
 
 extern MeasurementList myMeasurementList;
 
-#endif  // GATEWAY
+#endif  // GATEWAY || CHAMBER
 
 #endif  // SRC_MEASUREMENT_HPP_
