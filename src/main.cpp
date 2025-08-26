@@ -24,7 +24,7 @@ SOFTWARE.
 #include <Arduino.h>
 
 #include <ble_chamber.hpp>
-#include <ble_chamber_scanner.hpp>
+#include <ble_chamber_scan.hpp>
 #include <ble_gateway.hpp>
 #include <ble_gravitymon.hpp>
 #include <ble_pressuremon.hpp>

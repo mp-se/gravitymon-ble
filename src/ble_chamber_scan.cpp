@@ -23,7 +23,7 @@ SOFTWARE.
  */
 #if defined(CHAMBER)
 
-#include <ble_chamber_scanner.hpp>
+#include <ble_chamber_scan.hpp>
 #include <cstdio>
 #include <log.hpp>
 #include <memory>
