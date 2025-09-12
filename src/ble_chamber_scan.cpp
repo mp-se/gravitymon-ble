@@ -72,9 +72,8 @@ void BleDeviceCallbacks::onResult(
         advertisedDevice->getManufacturerData()[1] == 0x00 &&
         advertisedDevice->getManufacturerData()[2] == 0x03 &&
         advertisedDevice->getManufacturerData()[3] == 0x15) {
-      Log.notice(
-          F("BLE : Advertised iBeacon GRAVMON device: %s" CR),
-          advertisedDevice->getAddress().toString().c_str());
+      Log.notice(F("BLE : Advertised iBeacon GRAVMON device: %s" CR),
+                 advertisedDevice->getAddress().toString().c_str());
 
       bleScanner.proccesGravitymonBeacon(
           advertisedDevice->getManufacturerData(),

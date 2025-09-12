@@ -74,7 +74,7 @@ void BleSender::sendCustomBeaconData(float chamberTempC, float beerTempC) {
   mf += static_cast<char>((c >> 8));  // Chamber Temp
   mf += static_cast<char>((c & 0xFF));
   mf += static_cast<char>((b >> 8));  // Beer Temp
-  mf += static_cast<char>((b & 0xFF));  
+  mf += static_cast<char>((b & 0xFF));
   mf += static_cast<char>(0x00);
   mf += static_cast<char>(0x00);
   mf += static_cast<char>(0x00);
