@@ -24,13 +24,13 @@ SOFTWARE.
 #ifndef SRC_MEASUREMENT_HPP_
 #define SRC_MEASUREMENT_HPP_
 
-#if defined(GATEWAY) || defined(CHAMBER)
-
 #include <Arduino.h>
 #include <FS.h>
 
 #include <cstdio>
 #include <deque>
+#include <log.hpp>
+#include <map>
 #include <memory>
 #include <sdcard_mmc.hpp>
 #include <sdcard_sd.hpp>
@@ -533,32 +533,51 @@ class MeasurementList {
  private:
   std::deque<std::unique_ptr<MeasurementEntry>> _list;
   const int MAX_ENTRIES = 20;
+  std::map<String, uint32_t> _lastLogTimes;
 
  public:
   MeasurementList() {}
   ~MeasurementList() { clear(); }
 
-  void updateData(std::unique_ptr<MeasurementBaseData>& data) {
+  void updateData(std::unique_ptr<MeasurementBaseData>& data,
+                  int minWaitTimeMinutes = 0) {
     if (data.get() == nullptr) {
       return;
     }
 
+    String id = data->getId();
+    int32_t MIN_WAIT_TIME =
+        minWaitTimeMinutes * 60 * 1000;  // Convert minutes to milliseconds
+    uint32_t now = millis();
+    bool shouldWrite = (_lastLogTimes.find(id) == _lastLogTimes.end()) ||
+                       (now - _lastLogTimes[id]) >= MIN_WAIT_TIME;
+
+#if defined(ENABLE_MMC) || defined(ENABLE_SD)
+    if (shouldWrite) {
+      _lastLogTimes[id] = now;
+
+      Log.notice(F("Meas: Logging data from %s to SD." CR), id.c_str());
+
+      if (mySdStorage.hasCard()) {
+        File file = mySdStorage.open("/data.csv", FILE_APPEND, true);
+        if (file) {
+          data->writeToFile(file);
+          file.close();
+        } else {
+          Log.error(F("SD  : Failed to open data.csv for writing." CR));
+        }
+      }
+    } else {
+      Log.notice(F("Meas: Skip logging data from %s, to frequent "
+                   "logging." CR),
+                 id.c_str());
+    }
+#endif
+
     if (size() > MAX_ENTRIES)  // If list if full, remove the oldest entry
       _list.pop_front();
 
-    int i = findMeasurementById(data->getId());
-
-#if defined(ENABLE_MMC) || defined(ENABLE_SD)
-    if (mySdStorage.hasCard()) {
-      File file = mySdStorage.open("/data.csv", FILE_APPEND, true);
-      if (file) {
-        data->writeToFile(file);
-        file.close();
-      } else {
-        Log.error(F("SD  : Failed to open data.csv for writing." CR));
-      }
-    }
-#endif
+    int i = findMeasurementById(id);
 
     if (i == -1) {
       std::unique_ptr<MeasurementEntry> entry;
@@ -599,7 +618,5 @@ class MeasurementList {
 };
 
 extern MeasurementList myMeasurementList;
-
-#endif  // GATEWAY || CHAMBER
 
 #endif  // SRC_MEASUREMENT_HPP_

@@ -50,33 +50,33 @@ class BleScanner {
   void setScanTime(int scanTime) { _scanTime = scanTime; }
   void setAllowActiveScan(bool activeScan) { _activeScan = activeScan; }
 
+  void loop();
+
   void proccesTiltBeacon(const std::string &advertStringHex,
                          const int8_t &currentRSSI);
-
   void proccesGravitymonBeacon(const std::string &advertStringHex,
                                NimBLEAddress address);
   void processGravitymonEddystoneBeacon(NimBLEAddress address,
                                         const std::vector<uint8_t> &payload);
-
   void proccesRaptBeacon(const std::string &advertStringHex,
                          NimBLEAddress address);
-
   void proccesPressuremonBeacon(const std::string &advertStringHex,
                                 NimBLEAddress address);
   void processPressuremonEddystoneBeacon(NimBLEAddress address,
                                          const std::vector<uint8_t> &payload);
-
   void proccesChamberBeacon(const std::string &advertStringHex,
                             NimBLEAddress address);
 
  private:
   int _scanTime = 5;
   bool _activeScan = false;
-
   BLEScan *_bleScan = nullptr;
-
   BleDeviceCallbacks *_deviceCallbacks = nullptr;
+  std::queue<std::unique_ptr<MeasurementBaseData>> _bleData;
+  std::map<String, uint32_t> _lastAddTimes;
+
   TiltColor uuidToTiltColor(std::string uuid);
+  void addData(std::unique_ptr<MeasurementBaseData> data);
 };
 
 extern BleScanner bleScanner;
