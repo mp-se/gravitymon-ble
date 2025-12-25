@@ -24,13 +24,14 @@ SOFTWARE.
 #ifndef SRC_BLE_CHAMBER_SCAN_HPP_
 #define SRC_BLE_CHAMBER_SCAN_HPP_
 
-#if defined(CHAMBER)
+#if defined(ENABLE_BLE) && defined(CHAMBER) && defined(ENABLE_BLE_SENSOR)
 
 #include <NimBLEAdvertisedDevice.h>
 #include <NimBLEDevice.h>
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
 
+#include <map>
 #include <measurement.hpp>
 #include <queue>
 #include <string>
@@ -46,26 +47,37 @@ class BleScanner {
   void init();
   void deInit();
 
+  void loop();
+
   bool scan();
   void setScanTime(int scanTime) { _scanTime = scanTime; }
   void setAllowActiveScan(bool activeScan) { _activeScan = activeScan; }
+
+  void proccesTiltBeacon(const std::string &advertStringHex,
+                         const int8_t &currentRSSI);
 
   void proccesGravitymonBeacon(const std::string &advertStringHex,
                                NimBLEAddress address);
   void processGravitymonEddystoneBeacon(NimBLEAddress address,
                                         const std::vector<uint8_t> &payload);
 
+  void proccesRaptBeacon(const std::string &advertStringHex,
+                         NimBLEAddress address);
+
  private:
   int _scanTime = 5;
   bool _activeScan = false;
-
   BLEScan *_bleScan = nullptr;
-
   BleDeviceCallbacks *_deviceCallbacks = nullptr;
+  std::queue<std::unique_ptr<MeasurementBaseData>> _bleData;
+  std::map<String, uint32_t> _lastAddTimes;
+
+  TiltColor uuidToTiltColor(std::string uuid);
+  void addData(std::unique_ptr<MeasurementBaseData> data);
 };
 
 extern BleScanner bleScanner;
 
-#endif  // CHAMBER
+#endif  // ENABLE_BLE && CHAMBER && ENABLE_BLE_SENSOR
 
 #endif  // SRC_BLE_CHAMBER_SCAN_HPP_

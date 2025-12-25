@@ -21,36 +21,48 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
-#ifndef SRC_BLE_PRESSUREMON_HPP_
-#define SRC_BLE_PRESSUREMON_HPP_
+#ifndef SRC_MDNS_DISCOVERY_HPP_
+#define SRC_MDNS_DISCOVERY_HPP_
 
-#if defined(ENABLE_BLE) && defined(PRESSUREMON)
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <IPAddress.h>
 
-#include <NimBLEBeacon.h>
-#include <NimBLEDevice.h>
+#include <map>
+#include <utility>
+#include <vector>
 
-class BleSender {
- private:
-  BLEServer* _server = nullptr;
-  BLEAdvertising* _advertising = nullptr;
-  BLEService* _service = nullptr;
-  BLECharacteristic* _characteristic = nullptr;
-  BLEUUID _uuid;
-  bool _initFlag = false;
-  int _beaconTime = 1000;
-
-  void dumpPayload(const char* payload, int len);
-
- public:
-  BleSender() {}
-
-  void init();
-
-  // Beacons
-  void sendCustomBeaconData(float battery, float tempC, float pressurePsi,
-                            float pressurePsi1);
+struct MdnsDevice {
+  String name;
+  IPAddress ip;
+  uint16_t port = 0;
+  std::vector<std::pair<String, String>> txt;
+  time_t lastSeen = 0;  // 0 means unknown/not available
 };
 
-#endif  // ENABLE_BLE && PRESSUREMON
+class MdnsScanner {
+ public:
+  explicit MdnsScanner(uint32_t scanIntervalMs = 30000) {}
+  void setup() {}
+  void loop() {}
 
-#endif  // SRC_BLE_PRESSUREMON_HPP_
+  const std::vector<MdnsDevice>& getDevices() const { return _devices; }; 
+
+  bool saveToFile() {}
+  bool loadFromFile() {}
+  void populateJson(JsonObject& doc) const {}
+  void clear() {}
+
+  String findDeviceByTxt(const String& key, const String& value,
+                         bool valueOnNotFound = false) const { return ""; }
+
+ private:
+  std::vector<MdnsDevice> _devices;
+
+  int findDeviceIndex(const String& name, const IPAddress& ip,
+                      uint16_t port) const { return -1; }
+};
+
+#endif  // SRC_MDNS_DISCOVERY_HPP_
+
+// EOF

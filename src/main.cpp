@@ -32,6 +32,9 @@ SOFTWARE.
 #include <log.hpp>
 #include <utils.hpp>
 #include <measurement.hpp>
+#include <mdns_discovery.hpp>
+
+MdnsScanner myMdnsScanner;
 
 #if defined(PRESSUREMON)
 BleSender myBleSender;
@@ -46,8 +49,9 @@ BleSender myBleSender;
 // #define CLIENT_GRAVITYMON_TILTPRO
 // #define CLIENT_GRAVITYMON_IBEACON
 // #define CLIENT_GRAVITYMON_EDDYSTONE
-// #define CLIENT_RAPT_V1
-#define CLIENT_RAPT_V2
+// #define CLIENT_GRAVITYMON_RAPT_V1
+// #define CLIENT_GRAVITYMON_RAPT_V2
+#define CLIENT_GRAVITYMON_ALL
 
 #elif defined(CHAMBER)
 BleSender myBleSender;
@@ -88,49 +92,50 @@ void setup() {
 
 void loop() {
   String color;
+  uint32_t ms = 3000;
 
-#if defined(CLIENT_GRAVITYMON_TILT) && defined(GRAVITYMON)
+#if (defined(CLIENT_GRAVITYMON_TILT) || defined(CLIENT_GRAVITYMON_ALL)) && defined(GRAVITYMON)
   Log.info(F("Gravitymon TILT server started" CR));
   color = "pink";
   myBleSender.sendTiltData(color, 41.234, 1.23456, false);
-  delay(2000);
+  delay(ms);
 #endif
 
-#if defined(CLIENT_GRAVITYMON_TILTPRO) && defined(GRAVITYMON)
+#if (defined(CLIENT_GRAVITYMON_TILTPRO) || defined(CLIENT_GRAVITYMON_ALL)) && defined(GRAVITYMON)
   Log.info(F("Gravitymon TILT PRO server started" CR));
   color = "green";
   myBleSender.sendTiltData(color, 31.234, 1.12345, true);
-  delay(2000);
+  delay(ms);
 #endif
 
-#if defined(CLIENT_GRAVITYMON_IBEACON) && defined(GRAVITYMON)
+#if (defined(CLIENT_GRAVITYMON_IBEACON) || defined(CLIENT_GRAVITYMON_ALL)) && defined(GRAVITYMON)
   Log.info(F("Gravitymon iBbeacon server started" CR));
   myBleSender.sendCustomBeaconData(3.34567, 42.12345, 1.234567, 89.76543);
-  delay(2000);
+  delay(ms);
 #endif
 
-#if defined(CLIENT_GRAVITYMON_EDDYSTONE) && defined(GRAVITYMON)
+#if (defined(CLIENT_GRAVITYMON_EDDYSTONE) || defined(CLIENT_GRAVITYMON_ALL)) && defined(GRAVITYMON)
   Log.info(F("Gravitymon EddyStone server started" CR));
   myBleSender.sendEddystoneData(3.34567, 42.12345, 1.234567, 89.76543);
-  delay(2000);
+  delay(ms);
 #endif
 
-#if defined(CLIENT_RAPT_V1) && defined(GRAVITYMON)
+#if (defined(CLIENT_GRAVITYMON_RAPT_V1) || defined(CLIENT_GRAVITYMON_ALL)) && defined(GRAVITYMON)
   Log.info(F("Gravitymon RAPT v1 server started" CR));
   myBleSender.sendRaptV1Data(3.34567, 42.12345, 1.234567, 20.25);
-  delay(2000);
+  delay(ms);
 #endif
 
-#if defined(CLIENT_RAPT_V2) && defined(GRAVITYMON)
+#if (defined(CLIENT_GRAVITYMON_RAPT_V2) || defined(CLIENT_GRAVITYMON_ALL)) && defined(GRAVITYMON)
   Log.info(F("Gravitymon RAPT v2 server started" CR));
   myBleSender.sendRaptV2Data(3.34567, 42.12345, 1.234567, 20.25, 5.6789, true);
-  delay(2000);
+  delay(ms);
 #endif
 
 #if defined(CLIENT_PRESSUREMON_IBEACON) && defined(PRESSUREMON)
   Log.info(F("Pressuremon iBbeacon server started" CR));
   myBleSender.sendCustomBeaconData(3.34567, 42.12345, 1.234567, 49.76543);
-  delay(2000);
+  delay(ms);
 #endif
 
 // #if defined(CLIENT_PRESSUREMON_EDDYSTONE) && defined(PRESSUREMON)
@@ -142,12 +147,15 @@ void loop() {
 #if defined(CLIENT_CHAMBER_IBEACON) && defined(CHAMBER)
   Log.info(F("Chamber iBbeacon server started" CR));
   myBleSender.sendCustomBeaconData(22.345, 24.765);
-  delay(2000);
+  delay(ms);
 #endif
 
 #if defined(GATEWAY) || defined(CHAMBER)
   Log.notice(F("Main: Starting BLE scan." CR));
   bleScanner.scan();
+  #if defined(GATEWAY)
+  bleScanner.loop(1000);
+  #endif
   delay(5000);
 
   Log.notice(F("Main: Checking result." CR));
