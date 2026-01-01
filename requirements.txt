@@ -2,3 +2,4 @@ bleak
 requests
 aioblescan
 construct
+redis

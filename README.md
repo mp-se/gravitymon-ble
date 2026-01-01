@@ -9,7 +9,7 @@ The Gravitymon BLE sender will support 4 modes:
 * Gravitymon (iBeacon broadcast), works on all boards with bluetooth.
 * Gravitymon EddyStoneTLM (BLE 5.x), require an C3 or S3 chip to work.
 
-### The following table shows the client options for receiving the data. 
+### The following table shows the client options for receiving the data.
 
 | Option | Passive Scan | Active Scan | ESP32 | Win/Python |
 | :------ | :------: | :------: | :------: | :------: |
@@ -18,17 +18,19 @@ The Gravitymon BLE sender will support 4 modes:
 | iBeacon/Gravmon | Yes | Yes | Yes | Yes |
 | Gravitymon - Ext Advertisement | No | Yes | Yes | No |
 | Gravitymon - EddyStoneTLM | No | Yes | Yes | Yes |
-| Gravitymon - RAPT | Yes | Yes | Yes | Yes |
+| Gravitymon - RAPT v1 | Yes | Yes | Yes | Yes |
+| Gravitymon - RAPT v2 | Yes | Yes | Yes | Yes |
 
-### The following table shows the data coverage. 
+### The following table shows the data coverage.
 
 | Option | Gravity | Temp | Angle | Battery | ChipID | 
-| :------ | :------: | :------: | :------: | :------: | :------: |     
+| :------ | :------: | :------: | :------: | :------: | :------: |
 | iBeacon/Tilt | Yes | Yes | - | - | - | 
-| iBeacon/Tilt Pro | Yes | Yes | - | - | - | - | - | - | 
+| iBeacon/Tilt Pro | Yes | Yes | - | - | - | - | - | - |
 | iBeacon/Gravitymon | Yes | Yes | Yes | Yes | Yes | 
-| Gravitymon - EddyStoneTLM | Yes | Yes | Yes | Yes | Yes | 
-| Gravitymon - RAPT | Yes | Yes | Yes | Yes | - | 
+| Gravitymon - EddyStoneTLM | Yes | Yes | Yes | Yes | Yes |
+| Gravitymon - RAPT v1 | Yes | Yes | Yes | Yes | Yes |
+| Gravitymon - RAPT v2 | Yes | Yes | Yes | Yes | - |
 
 ## How the GRAVITYMON extended advertisement mode is implemented
 
@@ -89,4 +91,4 @@ or
 
 ## Python test script for reading TILT or GRAVITYMON ble data
 
-`python .\scan.py`
+`export API_HOST=localhost:8000 && python3 ./scan.py`

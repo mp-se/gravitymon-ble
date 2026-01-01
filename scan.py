@@ -10,13 +10,18 @@ from uuid import UUID
 from construct import Array, Byte, Const, Int8sl, Int16ub, Int32ub, Float32b, Struct
 from construct.core import ConstError
 
-from bleak import BleakScanner, BleakClient
+from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
 logger = logging.getLogger(__file__)
 
+# Configuration options for this script
 skip_push = True # Disable push to API for testing
+skip_chamber = False # Dont detect chamber devices
+skip_pressuremon = False # Dont detect pressuremon devices
+skip_gravitymon = False # Dont detect gravitymon devices
+skip_null_values = True # Will remove attributes with null values before sending to API
 
 # Write the following keys to redis to share the current status
 # ble_<chipid>_last : <update time>
@@ -107,6 +112,7 @@ rapt_v1_ibeacon_format = Struct(
 
 rapt_v2_ibeacon_format = Struct(
     "tag" / Const(b"PT\x02"),
+    "padding" / Byte,
     "velocity_valid" / Byte,
     "velocity" / Float32b,
     "temp" / Int16ub,
@@ -191,6 +197,22 @@ def init():
     )
 
 
+def remove_none_values(obj):
+    if skip_null_values is False:
+        return obj
+
+    """
+    Recursively removes all None values from a dictionary or list structure.
+    Returns the cleaned structure.
+    """
+    if isinstance(obj, dict):
+        return {k: remove_none_values(v) for k, v in obj.items() if v is not None}
+    elif isinstance(obj, list):
+        return [remove_none_values(item) for item in obj if item is not None]
+    else:
+        return obj
+
+
 def contains(list, filter):
     for x in list:
         if filter(x):
@@ -205,6 +227,9 @@ def first(iterable, default=None):
 
 
 async def parse_gravitymon(device: BLEDevice, advertisement_data: AdvertisementData):
+    if skip_gravitymon:
+        return
+
     global gravitymons
 
     try:
@@ -226,8 +251,8 @@ async def parse_gravitymon(device: BLEDevice, advertisement_data: AdvertisementD
             "temp_units": "C",
             "RSSI": 0,
         }
+        data = remove_none_values(data) 
         logger.info(f"Gravitymon data received: {json.dumps(data)} {device.address}")
-
         now = time.time()
 
         writeKey(f"ble_{chipId}_last", int(now))
@@ -259,6 +284,9 @@ async def parse_gravitymon(device: BLEDevice, advertisement_data: AdvertisementD
     
 
 def parse_gravitymon_eddystone(device: BLEDevice, advertisement_data: AdvertisementData):
+    if skip_gravitymon:
+        return
+
     global gravitymons
 
     try:
@@ -281,6 +309,8 @@ def parse_gravitymon_eddystone(device: BLEDevice, advertisement_data: Advertisem
             "temp_units": "C",
             "RSSI": 0,
         }
+
+        data = remove_none_values(data) 
         logger.info(f"Gravitymon data received: {json.dumps(data)} {device.address}")
 
         now = time.time()
@@ -313,7 +343,10 @@ def parse_gravitymon_eddystone(device: BLEDevice, advertisement_data: Advertisem
         pass
 
 async def parse_pressuremon(device: BLEDevice, advertisement_data: AdvertisementData):
-    global gravitymons
+    if skip_pressuremon:
+        return
+
+    global pressuremons
 
     try:
         apple_data = advertisement_data.manufacturer_data[0x004C]
@@ -336,6 +369,7 @@ async def parse_pressuremon(device: BLEDevice, advertisement_data: Advertisement
             "RSSI": 0,
         }
 
+        data = remove_none_values(data) 
         logger.info(f"Pressuremon data received: {json.dumps(data)} {device.address}")
 
         now = time.time()
@@ -369,11 +403,15 @@ async def parse_pressuremon(device: BLEDevice, advertisement_data: Advertisement
         pass
 
 async def parse_chamber(device: BLEDevice, advertisement_data: AdvertisementData):
+    if skip_chamber:
+        return
+
     try:
         apple_data = advertisement_data.manufacturer_data[0x004C]
         ibeacon = chamber_ibeacon_format.parse(apple_data)
         chipId = hex(ibeacon.chipid)[2:]
-        # logger.info(f"Parsing chamber ibeacon: {device}")
+
+        logger.info(f"Parsing chamber ibeacon: {device}")
 
         data = {
             "ID": chipId,
@@ -382,6 +420,7 @@ async def parse_chamber(device: BLEDevice, advertisement_data: AdvertisementData
             "temperature-unit": "C",
         }
 
+        data = remove_none_values(data) 
         logger.info(f"Chamber data received: {json.dumps(data)} {device.address}")
 
         now = time.time()
@@ -447,13 +486,16 @@ def parse_gravitymon_tilt(advertisement_data: AdvertisementData):
         pass
 
 def parse_rapt_v1(device: BLEDevice, advertisement_data: AdvertisementData):
+    if skip_gravitymon:
+        return
+
     try:
         apple_data = advertisement_data.manufacturer_data[0x4152]
         ibeacon = rapt_v1_ibeacon_format.parse(apple_data)
 
         data = {
             "temperature": float(ibeacon.temp) / 128 - 273.15,
-            "gravity": float(ibeacon.gravity) / 1000,
+            "gravity": float(ibeacon.gravity),
             "mac": ":".join(f"{b:02x}" for b in ibeacon.mac),
             "x": ibeacon.x / 16,
             "y": ibeacon.y / 16,
@@ -461,12 +503,12 @@ def parse_rapt_v1(device: BLEDevice, advertisement_data: AdvertisementData):
             "battery": float(ibeacon.battery) / 256,
             "rssi": advertisement_data.rssi,
         }
-        logger.info(f"Tilt data received: {json.dumps(data)}")
+        logger.info(f"RAPT v1 data received: {json.dumps(data)}")
 
         now = time.time()
 
         writeKey(f"ble_{device.address}_last", int(now))
-        writeKey(f"ble_{device.address}_gravity", float(ibeacon.gravity / 1000))
+        writeKey(f"ble_{device.address}_gravity", float(ibeacon.gravity))
         writeKey(f"ble_{device.address}_temp", float(ibeacon.temp / 128 - 273.15))
         writeKey(f"ble_{device.address}_type", "rapt")
 
@@ -476,27 +518,30 @@ def parse_rapt_v1(device: BLEDevice, advertisement_data: AdvertisementData):
         pass
 
 def parse_rapt_v2(device: BLEDevice, advertisement_data: AdvertisementData):
+    if skip_gravitymon:
+        return
+
     try:
         apple_data = advertisement_data.manufacturer_data[0x4152]
         ibeacon = rapt_v2_ibeacon_format.parse(apple_data)
 
         data = {
             "temperature": ibeacon.temp / 128 - 273.15,
-            "velocity_valid": ibeacon.velocity_valid == 1,
-            "velocity": ibeacon.velocity,
-            "gravity": ibeacon.gravity / 1000,
+            "velocity_valid": True if ibeacon.velocity_valid == 1 else False,
+            "velocity": 0.0 if ibeacon.velocity_valid == 0 else ibeacon.velocity,
+            "gravity": ibeacon.gravity,
             "x": ibeacon.x / 16,
             "y": ibeacon.y / 16,
             "z": ibeacon.z / 16,
             "battery": ibeacon.battery / 256,
             "rssi": advertisement_data.rssi,
         }
-        logger.info(f"Tilt data received: {json.dumps(data)}")
+        logger.info(f"RAPT v2 data received: {json.dumps(data)}")
 
         now = time.time()
 
         writeKey(f"ble_{device.address}_last", int(now))
-        writeKey(f"ble_{device.address}_gravity", float(ibeacon.gravity / 1000))
+        writeKey(f"ble_{device.address}_gravity", float(ibeacon.gravity))
         writeKey(f"ble_{device.address}_temp", float(ibeacon.temp / 128 - 273.15))
         writeKey(f"ble_{device.address}_type", "rapt2")
 
@@ -512,10 +557,6 @@ async def device_found(device: BLEDevice, advertisement_data: AdvertisementData)
         "0000feaa-" in s for s in advertisement_data.service_uuids
     ):
         parse_gravitymon_eddystone(device=device, advertisement_data=advertisement_data)
-    elif device.name == "pressuremon" and any(
-        "0000feaa-" in s for s in advertisement_data.service_uuids
-    ):
-        parse_pressuremon_eddystone(device=device, advertisement_data=advertisement_data)
     else:
         # Try the other formats and see what matches
         await parse_gravitymon(device=device, advertisement_data=advertisement_data)

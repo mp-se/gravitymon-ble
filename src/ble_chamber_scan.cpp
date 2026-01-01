@@ -419,7 +419,7 @@ void BleScanner::proccesRaptBeacon(const std::string &advertStringHex,
     floatUnion.b[1] = *(payload + 15);
     floatUnion.b[2] = *(payload + 14);
     floatUnion.b[3] = *(payload + 13);
-    gravity = floatUnion.f / 1000;
+    gravity = floatUnion.f;
 
     angleX = static_cast<float>((*(payload + 17) << 8) | *(payload + 18)) / 16;
     angleY = static_cast<float>((*(payload + 19) << 8) | *(payload + 20)) / 16;

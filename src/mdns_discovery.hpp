@@ -48,8 +48,8 @@ class MdnsScanner {
 
   const std::vector<MdnsDevice>& getDevices() const { return _devices; }; 
 
-  bool saveToFile() {}
-  bool loadFromFile() {}
+  bool saveToFile() { return true; }
+  bool loadFromFile() { return true; }
   void populateJson(JsonObject& doc) const {}
   void clear() {}
 
